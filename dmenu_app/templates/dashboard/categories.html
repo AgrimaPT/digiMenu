@@ -1,0 +1,269 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+
+<style>
+    :root {
+        --primary-color: #4a7bf7;
+        --primary-dark: #3556dc;
+        --danger-color: #dc3545;
+        --danger-dark: #c82333;
+    }
+
+    /* Main Layout */
+    .categories-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 120px); /* Adjust based on your header height */
+        overflow: hidden;
+        padding: 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 28px;
+        color: #333;
+    }
+
+    /* Table Container */
+    .table-container {
+        flex: 1;
+        background-color: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Table Styling */
+    .table-wrapper {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed; /* Ensures columns don't overflow */
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+    }
+
+    thead th {
+        position: sticky;
+        top: 0;
+        background-color: #343a40;
+        color: white;
+        z-index: 10;
+    }
+
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Column Widths */
+    th:nth-child(1), td:nth-child(1) { width: 15%; } /* Sort ID */
+    th:nth-child(2), td:nth-child(2) { width: 65%; } /* Category Name */
+    th:nth-child(3), td:nth-child(3) { width: 20%; } /* Actions */
+
+    /* Button Styling */
+    .btn {
+        padding: 8px 12px;
+        font-size: 14px;
+        border-radius: 6px;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+    }
+
+    .btn-danger {
+        background-color: var(--danger-color);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: var(--danger-dark);
+    }
+
+    .btn-sm {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+        .categories-container {
+            height: auto;
+            min-height: calc(100vh - 120px);
+            padding: 15px;
+        }
+        
+        th, td {
+            padding: 10px 12px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        h1 {
+            font-size: 24px;
+        }
+        
+        th:nth-child(1), td:nth-child(1) { width: 20%; }
+        th:nth-child(2), td:nth-child(2) { width: 60%; }
+        th:nth-child(3), td:nth-child(3) { width: 20%; }
+    }
+
+    @media (max-width: 576px) {
+        .categories-container {
+            padding: 10px;
+        }
+        
+        th, td {
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 6px 8px;
+            font-size: 13px;
+        }
+        
+        th:nth-child(1), td:nth-child(1) { width: 25%; }
+        th:nth-child(2), td:nth-child(2) { width: 50%; }
+        th:nth-child(3), td:nth-child(3) { width: 25%; }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="categories-container">
+    <div class="page-header">
+        <h1>Categories</h1>
+        <a href="{% url 'add_category' request.user.username %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Category
+        </a>
+    </div>
+
+    <div class="table-container">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sort ID</th>
+                        <th>Category Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cat %}
+                    <tr>
+                        <td>{{ c.sort_id }}</td>
+                        <td>{{ c.name }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'edit_category' request.user.username c.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form method="POST" action="{% url 'delete_category' request.user.username c.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(this)">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="empty-state">
+                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <h3>No Categories Found</h3>
+                            <p>Add your first category to get started</p>
+                            <a href="{% url 'add_category' request.user.username %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus"></i> Add Category
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(button) {
+        if (confirm("Are you sure you want to delete this category? All items in this category will become uncategorized.")) {
+            button.closest("form").submit();
+        }
+    }
+
+    // Adjust table container height on resize
+    window.addEventListener('resize', function() {
+        const container = document.querySelector('.table-wrapper');
+        if (container) {
+            const headerHeight = document.querySelector('.page-header').offsetHeight;
+            const viewportHeight = window.innerHeight;
+            container.style.maxHeight = (viewportHeight - headerHeight - 60) + 'px';
+        }
+    });
+
+    // Initialize height on load
+    document.addEventListener('DOMContentLoaded', function() {
+        window.dispatchEvent(new Event('resize'));
+    });
+</script>
+
+{% endblock %}

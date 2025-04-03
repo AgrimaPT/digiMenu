@@ -1,0 +1,285 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+
+<style>
+    :root {
+        --primary-color: #4a7bf7;
+        --primary-dark: #3556dc;
+        --danger-color: #dc3545;
+        --danger-dark: #c82333;
+        --success-color: #28a745;
+    }
+
+    /* Main Layout */
+    .items-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 120px);
+        overflow: hidden;
+        padding: 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    h1 {
+        margin: 0;
+        font-size: 28px;
+        color: #333;
+    }
+
+    /* Table Container */
+    .table-container {
+        flex: 1;
+        background-color: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Table Styling */
+    .table-wrapper {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px; /* Minimum width to prevent squeezing */
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    thead th {
+        position: sticky;
+        top: 0;
+        background-color: #343a40;
+        color: white;
+        z-index: 10;
+    }
+
+    tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Column Widths */
+    th:nth-child(1), td:nth-child(1) { width: 25%; max-width: 25%; } /* Name */
+    th:nth-child(2), td:nth-child(2) { width: 15%; max-width: 15%; } /* Price */
+    th:nth-child(3), td:nth-child(3) { width: 20%; max-width: 20%; } /* Category */
+    th:nth-child(4), td:nth-child(4) { width: 15%; max-width: 15%; } /* Availability */
+    th:nth-child(5), td:nth-child(5) { width: 25%; max-width: 25%; } /* Actions */
+
+    /* Availability Checkbox */
+    .availability-checkbox {
+        transform: scale(1.3);
+        cursor: pointer;
+    }
+
+    /* Button Styling */
+    .btn {
+        padding: 8px 12px;
+        font-size: 14px;
+        border-radius: 6px;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+    }
+
+    .btn-danger {
+        background-color: var(--danger-color);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: var(--danger-dark);
+    }
+
+    .btn-sm {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 1200px) {
+        th, td {
+            padding: 10px 12px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .items-container {
+            height: auto;
+            min-height: calc(100vh - 120px);
+            padding: 15px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        h1 {
+            font-size: 24px;
+        }
+        
+        .btn {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+        
+        .action-buttons {
+            flex-wrap: wrap;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .items-container {
+            padding: 10px;
+        }
+        
+        th, td {
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+        
+        /* Keep table structure but make it scroll horizontally within container */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        
+        table {
+            min-width: 100%;
+        }
+    }
+</style>
+
+<div class="items-container">
+    <div class="page-header">
+        <h1>Menu Items</h1>
+        <a href="{% url 'add_item' request.user.username %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Item
+        </a>
+    </div>
+
+    <div class="table-container">
+        <div class="table-wrapper">
+            {% if items %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Availability</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in items %}
+                    <tr>
+                        <td>{{ i.name }}</td>
+                        <td>
+                            <form method="POST" action="{% url 'update_availability' request.user.username i.id %}">
+                                {% csrf_token %}
+                                <input type="checkbox" class="availability-checkbox" name="available" {% if i.available %}checked{% endif %} onchange="this.form.submit()">
+                            </form>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'edit_item' request.user.username i.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form method="POST" action="{% url 'delete_item' request.user.username i.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(this)">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-utensils fa-3x mb-3"></i>
+                <h3>No Menu Items Found</h3>
+                <p>Add your first menu item to get started</p>
+                <a href="{% url 'add_item' request.user.username %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus"></i> Add Item
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(button) {
+        if (confirm("Are you sure you want to delete this menu item?")) {
+            button.closest("form").submit();
+        }
+    }
+
+    // Adjust table container height on resize
+    window.addEventListener('resize', function() {
+        const container = document.querySelector('.table-wrapper');
+        if (container) {
+            const headerHeight = document.querySelector('.page-header').offsetHeight;
+            const viewportHeight = window.innerHeight;
+            container.style.maxHeight = (viewportHeight - headerHeight - 60) + 'px';
+        }
+    });
+
+    // Initialize height on load
+    document.addEventListener('DOMContentLoaded', function() {
+        window.dispatchEvent(new Event('resize'));
+    });
+</script>
+
+{% endblock %}

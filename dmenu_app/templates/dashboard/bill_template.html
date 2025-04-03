@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; width: 150mm; margin: auto;padding: 20mm;height: 100%; min-height: 100%; box-sizing: border-box;">
+        <h2 style="text-align: center;">{{username}}</h2>
+        <p><strong>Order ID:</strong> {{ user_order_id }}</p>
+        <p><strong>Customer:</strong> {{ order.customer_name }}</p>
+        <p><strong>Date:</strong> {{ bill_generated_at }}</p>
+        <hr>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left; border-bottom: 1px solid #ddd; padding: 5px;">Item</th>
+                    <th style="text-align: center; border-bottom: 1px solid #ddd; padding: 5px;">Qty</th>
+                    <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 5px;">Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td style="padding: 5px;">{{ item.menu_item.name }}</td>
+                    <td style="text-align: center; padding: 5px;">{{ item.quantity }}</td>
+                    <td style="text-align: right; padding: 5px;">{{ item.price }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 5px;">No items in this order</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td colspan="2" style="text-align: left; padding: 5px; font-weight: bold;">Subtotal</td>
+                <td style="text-align: right; padding: 5px;">{{ order.total }}</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: left; padding: 5px; font-weight: bold;">CGST ({{ order.cgst_rate }}%)</td>
+                <td style="text-align: right; padding: 5px;">{{ order.calculate_cgst|floatformat:2  }}</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: left; padding: 5px; font-weight: bold;">SGST ({{ order.sgst_rate }}%)</td>
+                <td style="text-align: right; padding: 5px;">{{ order.calculate_sgst|floatformat:2  }}</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: left; padding: 5px; font-weight: bold;">Discount ({{ order.discount }}%)</td>
+                <td style="text-align: right; padding: 5px;">-{{ order.calculate_discount|floatformat:2  }}</td>
+            </tr>
+            <tr >
+                <td colspan="2" style="text-align: left; padding: 5px; font-weight: bold;font-size: 25px;">Final Total</td>
+                <td style="text-align: right; padding: 5px;font-weight: bold;font-size: 25px;">{{ order.final_total|floatformat:2}}</td>
+            </tr>
+        </table>
+        
+        <hr>
+        <p style="text-align: center;">Thank you for dining with us!</p>
+        <p style="text-align: center; font-size: 12px;">Visit us again!</p>
+    </div>
+    
+</body>
+</html>

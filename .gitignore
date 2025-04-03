@@ -1,0 +1,20 @@
+# Ignore the database
+db.sqlite3
+
+# Ignore media/uploads
+media/
+
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment
+venv/
+
+# Ignore IDE/editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

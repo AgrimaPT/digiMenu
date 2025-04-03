@@ -1,0 +1,76 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<!-- <button onclick="goBack()" class="btn btn-outline-primary mb-3">
+    <i class="fas fa-arrow-left"></i> Back
+</button> -->
+
+<div class="d-flex justify-content-center">
+    <div class="container mt-4" style="max-width: 600px;">
+        <div class="card shadow-lg p-4">
+            <h2 class="mb-3 text-primary text-center">
+                <i class="fas fa-edit"></i> Edit Category
+            </h2>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    {{ form.non_field_errors }}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            <div class="d-flex">
+                                {{ field }}
+                            </div>
+                            {% if field.errors %}
+                                <div class="text-danger small">
+                                    {{ field.errors|striptags }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <a href="{% url 'dashboard_categories' request.user.username %}" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
+
+<style>
+    /* Make input fields take up full available space */
+    input, select, textarea {
+        width: 100%;
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ced4da;
+        font-size: 16px;
+    }
+
+    .form-label {
+        font-weight: 600;
+    }
+
+    /* Add some responsiveness */
+    @media (max-width: 768px) {
+        .d-flex {
+            flex-direction: column;
+        }
+    }
+</style>
+
+{% endblock %}

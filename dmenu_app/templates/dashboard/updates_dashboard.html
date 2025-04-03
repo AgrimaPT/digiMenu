@@ -1,0 +1,711 @@
+
+<!-- base.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Dashboard - {% block title %}{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #1cc88a;
+            --accent-color: #f6c23e;
+            --dark-color: #5a5c69;
+        }
+        
+        body {
+            background-color: #f8f9fc;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
+            min-height: 100vh;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: #fff;
+        }
+        
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+        }
+        
+        .metric-card {
+            border-left: 0.25rem solid var(--primary-color);
+        }
+        
+        .metric-card.secondary {
+            border-left-color: var(--secondary-color);
+        }
+        
+        .metric-card.accent {
+            border-left-color: var(--accent-color);
+        }
+        
+        .bg-gradient-primary {
+            background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse bg-gradient-primary">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white">{{ request.user.get_username }}'s Restaurant</h4>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'dashboard_home' username=request.user.username %}">
+                                <i class="fas fa-fw fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'dashboard_orders' username=request.user.username %}">
+                                <i class="fas fa-fw fa-list-alt me-2"></i>
+                                Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'dashboard_items' username=request.user.username %}">
+                                <i class="fas fa-fw fa-utensils me-2"></i>
+                                Menu Items
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'dashboard_categories' username=request.user.username %}">
+                                <i class="fas fa-fw fa-tags me-2"></i>
+                                Categories
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">
+                                <i class="fas fa-fw fa-sign-out-alt me-2"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary time-period-btn" data-period="today">Today</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary time-period-btn" data-period="week">Week</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary time-period-btn" data-period="month">Month</button>
+                        </div>
+                        <input type="date" class="form-control form-control-sm" id="dateRange" value="{{ today|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        // Handle date range changes
+        $('#dateRange').change(function() {
+            const selectedDate = $(this).val();
+            window.location.href = `?date=${selectedDate}`;
+        });
+        
+        // Handle time period buttons
+        $('.time-period-btn').click(function() {
+            const period = $(this).data('period');
+            window.location.href = `?period=${period}`;
+        });
+        
+        // Initialize tooltips
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+
+
+
+<!-- home.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Metrics Row -->
+<div class="row mb-4">
+    <!-- Today's Sales -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Today's Sales</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ today_sales|floatformat:2 }}</div>
+                        <div class="mt-2">
+                            {% if growth_rate > 0 %}
+                            <span class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>
+                                {{ growth_rate }}%
+                            </span>
+                            {% else %}
+                            <span class="text-danger">
+                                <i class="fas fa-arrow-down me-1"></i>
+                                {{ growth_rate }}%
+                            </span>
+                            {% endif %}
+                            <span class="text-muted">vs yesterday</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Total Orders -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card secondary h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Orders</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_orders }}</div>
+                        <div class="mt-2">
+                            <span class="text-muted">{{ completed_orders }} completed</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Average Order Value -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card accent h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Avg. Order Value</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">${{ avg_order_value|floatformat:2 }}</div>
+                        <div class="mt-2">
+                            <span class="text-muted">{{ avg_items_per_order|floatformat:1 }} items/order</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-basket fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Selling Item -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Top Selling Item</div>
+                        {% if top_item %}
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ top_item.menu_item__name|truncatechars:20 }}</div>
+                        <div class="mt-2">
+                            <span class="text-muted">{{ top_item.total_quantity }} sold (${{ top_item.total_revenue|floatformat:2 }})</span>
+                        </div>
+                        {% else %}
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">No sales yet</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-star fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <!-- Sales Trend Chart -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Sales Trend</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
+                       data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                         aria-labelledby="dropdownMenuLink">
+                        <div class="dropdown-header">Chart Options:</div>
+                        <a class="dropdown-item" href="#" id="exportSalesChart">Export as PNG</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Category Sales Chart -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Sales by Category</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                    {% for category in category_sales %}
+                    <span class="me-2">
+                        <i class="fas fa-circle" style="color: {{ category.color }}"></i> {{ category.menu_item__category__name }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Row -->
+<div class="row">
+    <!-- Top Selling Items -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Top Selling Items</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Revenue</th>
+                                <th>% of Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in top_items %}
+                            <tr>
+                                <td>{{ item.menu_item__name }}</td>
+                                <td>{{ item.total_quantity }}</td>
+                                <td>${{ item.total_revenue|floatformat:2 }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                             style="width: {{ item.percentage }}%" 
+                                             aria-valuenow="{{ item.percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small>{{ item.percentage|floatformat:1 }}%</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Table Performance -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Table Performance</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Table</th>
+                                <th>Orders</th>
+                                <th>Revenue</th>
+                                <th>Avg. Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for table in table_performance %}
+                            <tr>
+                                <td>Table {{ table.table__number }}</td>
+                                <td>{{ table.order_count }}</td>
+                                <td>${{ table.total_revenue|floatformat:2 }}</td>
+                                <td>${{ table.avg_value|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No table data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Charts -->
+<script>
+    // Sales Trend Chart
+    const salesCtx = document.getElementById('salesChart');
+    const salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: {{ sales_labels|safe }},
+            datasets: [{
+                label: 'Sales ($)',
+                data: {{ sales_data|safe }},
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '$' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Category Sales Chart
+    const categoryCtx = document.getElementById('categoryChart');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ category_labels|safe }},
+            datasets: [{
+                data: {{ category_data|safe }},
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                    '#5a5c69', '#858796', '#f8f9fc', '#5a5c69', '#858796'
+                ],
+                hoverBackgroundColor: [
+                    '#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617',
+                    '#4e5070', '#6b6d7e', '#e5e7e9', '#4e5070', '#6b6d7e'
+                ],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '$' + context.parsed.toFixed(2);
+                        }
+                    }
+                }
+            },
+            cutout: '70%',
+        },
+    });
+    
+    // Export chart as PNG
+    document.getElementById('exportSalesChart').addEventListener('click', function() {
+        const url = salesChart.toBase64Image();
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'sales-chart.png';
+        link.click();
+    });
+</script>
+{% endblock %}
+
+
+<!-- views.py -->
+from django.db.models import Sum, Count, F, ExpressionWrapper, DecimalField
+from django.utils import timezone
+from datetime import timedelta, date
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Order, OrderItem, Table, MenuItem, Category
+from django.core.cache import cache
+from collections import defaultdict
+import colorsys
+
+@login_required
+def dashboard_home(request, username):
+    if request.user.username != username:
+        return redirect('login')
+    
+    # Get date filter from request
+    filter_date = get_date_filter(request)
+    
+    # Check cache first
+    cache_key = f'dashboard_{username}_{filter_date}'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        return render(request, 'dashboard/home.html', cached_data)
+    
+    # Date ranges
+    today = timezone.now().date()
+    date_range, previous_date_range = get_date_ranges(filter_date)
+    
+    # Get all orders for the selected period
+    orders = Order.objects.filter(
+        user=request.user,
+        created_at__date__in=date_range,
+        billed=True
+    ).select_related('table')
+    
+    # Get previous period orders for comparison
+    previous_orders = Order.objects.filter(
+        user=request.user,
+        created_at__date__in=previous_date_range,
+        billed=True
+    )
+    
+    # 1. Calculate key metrics
+    today_sales = orders.aggregate(total=Sum('final_total'))['total'] or 0
+    previous_sales = previous_orders.aggregate(total=Sum('final_total'))['total'] or 0
+    
+    growth_rate = 0
+    if previous_sales > 0:
+        growth_rate = ((today_sales - previous_sales) / previous_sales) * 100
+    
+    # 2. Order statistics
+    total_orders = orders.count()
+    completed_orders = orders.filter(status='Completed').count()
+    
+    avg_order_value = 0
+    if total_orders > 0:
+        avg_order_value = today_sales / total_orders
+    
+    # 3. Top selling items
+    top_items = OrderItem.objects.filter(
+        order__in=orders
+    ).values(
+        'menu_item__name'
+    ).annotate(
+        total_quantity=Sum('quantity'),
+        total_revenue=Sum(F('quantity') * F('price'))
+    ).order_by('-total_revenue')[:10]
+    
+    # Calculate percentage of total sales for each item
+    if today_sales > 0:
+        for item in top_items:
+            item['percentage'] = (item['total_revenue'] / today_sales) * 100
+    
+    top_item = top_items.first() if top_items.exists() else None
+    
+    # 4. Table performance
+    table_performance = orders.values(
+        'table__number'
+    ).annotate(
+        order_count=Count('id'),
+        total_revenue=Sum('final_total'),
+        avg_value=ExpressionWrapper(
+            F('total_revenue') / F('order_count'),
+            output_field=DecimalField()
+        )
+    ).order_by('-total_revenue')
+    
+    # 5. Sales trend data
+    daily_sales = orders.values(
+        'created_at__date'
+    ).annotate(
+        daily_total=Sum('final_total')
+    ).order_by('created_at__date')
+    
+    # Fill in missing dates with zero
+    sales_dict = {sale['created_at__date']: float(sale['daily_total']) for sale in daily_sales}
+    sales_data = [sales_dict.get(date, 0) for date in date_range]
+    sales_labels = [date.strftime('%a %d') for date in date_range]
+    
+    # 6. Category sales data
+    category_sales = OrderItem.objects.filter(
+        order__in=orders
+    ).values(
+        'menu_item__category__name'
+    ).annotate(
+        category_total=Sum(F('quantity') * F('price'))
+    ).order_by('-category_total')
+    
+    # Generate distinct colors for categories
+    category_colors = generate_colors(category_sales.count())
+    for i, category in enumerate(category_sales):
+        category['color'] = category_colors[i]
+    
+    category_labels = [item['menu_item__category__name'] for item in category_sales]
+    category_data = [float(item['category_total']) for item in category_sales]
+    
+    # Calculate average items per order
+    total_items = OrderItem.objects.filter(
+        order__in=orders
+    ).aggregate(total=Sum('quantity'))['total'] or 0
+    avg_items_per_order = total_items / total_orders if total_orders > 0 else 0
+    
+    context = {
+        'today': today,
+        'today_sales': today_sales,
+        'growth_rate': round(growth_rate, 2),
+        'total_orders': total_orders,
+        'completed_orders': completed_orders,
+        'avg_order_value': round(avg_order_value, 2),
+        'avg_items_per_order': round(avg_items_per_order, 1),
+        'top_items': top_items,
+        'top_item': top_item,
+        'table_performance': table_performance,
+        'sales_labels': sales_labels,
+        'sales_data': sales_data,
+        'category_sales': category_sales,
+        'category_labels': category_labels,
+        'category_data': category_data,
+        'selected_date': filter_date,
+    }
+    
+    # Cache for 1 hour
+    cache.set(cache_key, context, timeout=3600)
+    
+    return render(request, 'dashboard/home.html', context)
+
+def get_date_filter(request):
+    """Get date filter from request parameters"""
+    if 'date' in request.GET:
+        try:
+            return datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            pass
+    
+    if 'period' in request.GET:
+        today = timezone.now().date()
+        if request.GET['period'] == 'week':
+            return today - timedelta(days=today.weekday())
+        elif request.GET['period'] == 'month':
+            return date(today.year, today.month, 1)
+    
+    return timezone.now().date()
+
+def get_date_ranges(filter_date):
+    """Get date ranges for current and previous periods"""
+    if filter_date == timezone.now().date():  # Today
+        date_range = [filter_date]
+        previous_date_range = [filter_date - timedelta(days=1)]
+    elif filter_date.weekday() == 0:  # Week starting Monday
+        date_range = [filter_date + timedelta(days=i) for i in range(7)]
+        previous_date_range = [filter_date - timedelta(days=7+i) for i in range(7)]
+    elif filter_date.day == 1:  # Month
+        next_month = filter_date.replace(day=28) + timedelta(days=4)
+        last_day = next_month - timedelta(days=next_month.day)
+        date_range = [filter_date + timedelta(days=i) for i in range((last_day - filter_date).days + 1)]
+        
+        prev_month = filter_date.replace(day=1) - timedelta(days=1)
+        previous_date_range = [prev_month.replace(day=1) + timedelta(days=i) 
+                             for i in range((prev_month - prev_month.replace(day=1)).days + 1)]
+    else:  # Custom single date
+        date_range = [filter_date]
+        previous_date_range = [filter_date - timedelta(days=1)]
+    
+    return date_range, previous_date_range
+
+def generate_colors(count):
+    """Generate distinct colors for categories"""
+    colors = []
+    for i in range(count):
+        hue = i * (360 / max(count, 1))
+        rgb = colorsys.hsv_to_rgb(hue/360, 0.7, 0.8)
+        colors.append(f"rgb({int(rgb[0]*255)}, {int(rgb[1]*255)}, {int(rgb[2]*255)})")
+    return colors

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table {{ table.number }} - Menu</title>
+    
+    <!-- Bootstrap & Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f8f9fa;
+    background-image: 
+        radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.03) 1px, transparent 0);
+    background-size: 20px 20px;
+}
+
+h1.table-number {
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(to right, #3556dc, #4a7bf7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 2rem;
+}
+
+.table-number:hover {
+  transform: scale(1.05); /* Slight zoom on hover */
+}
+
+
+
+
+/* Category Bar */
+.category-bar {
+    white-space: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: linear-gradient(to right, #007bff, #00c6ff);
+    border-radius: 10px;
+    padding: 10px 15px;
+    scrollbar-width: none;
+}
+
+.category-bar::-webkit-scrollbar {
+    display: none; /* Hide scrollbar in Chrome/Safari */
+}
+
+.category-btn {
+    background: white;
+    color: #007bff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    transition: 0.3s ease-in-out;
+    font-weight: bold;
+}
+
+.category-btn:hover,
+.category-btn.active {
+    background-color: #0056b3;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Cart Floating Button */
+/* .cart-button {
+    background: #007bff;
+    color: white;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.cart-button:hover {
+    background: #0056b3;
+} */
+
+.cart-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    z-index: 1030;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease-in-out;
+}
+
+.cart-button:hover {
+    background-color: #0056b3;
+    transform: scale(1.1);
+}
+
+.cart-button .badge {
+    font-size: 12px;
+    padding: 4px 8px;
+    min-width: 20px;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: red;
+    border-radius: 50%;
+}
+
+
+/* Cart Items */
+.cart-item {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.cart-item:hover {
+    transform: scale(1.02);
+}
+
+/* Menu Cards */
+.menu-item .card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.menu-item .card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.menu-item {
+    padding: 10px;
+}
+
+
+.menu-item img {
+    width: 100%;  /* Ensures the image fills the container */
+    height: auto; /* Maintains aspect ratio */
+    object-fit: cover; /* Ensures the image covers the space nicely */
+    border-radius: 8px; /* Optional: Adds rounded corners */
+}
+
+
+.menu-item .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 10px 15px rgba(0, 0, 0, 0.15);
+}
+
+.menu-item .card-img-top {
+    border-radius: 15px 15px 0 0;
+}
+
+/* Quantity Controls */
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quantity-controls button {
+    border: none;
+    background: #007bff;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.quantity-controls button:hover {
+    background: #0056b3;
+}
+
+.quantity-input {
+    width: 50px;  /* Adjust width */
+    height: 30px; /* Adjust height */
+    text-align: center; /* Center the text */
+    font-size: 14px; /* Adjust font size */
+    padding: 5px; /* Adjust padding */
+    border-radius: 5px; /* Optional: rounded corners */
+}
+
+
+
+.custom-card {
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease-in-out;
+}
+
+.custom-card:hover {
+    transform: translateY(-5px); /* Lift card slightly */
+}
+
+.image-container img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Overlay Initially Hidden */
+.overlay {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4); /* Dark overlay */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    opacity: 0;
+    transition: all 0.4s ease-in-out;
+}
+
+/* Show Overlay on Hover OR When Item is in Cart */
+.custom-card:hover .overlay,
+.custom-card.in-cart .overlay {
+    top: 0;
+    opacity: 1;
+}
+
+
+.overlay-content {
+    padding: 15px;
+}
+
+h5.text-center {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+    margin-top: 10px;
+}
+.price-badge {
+    background: rgba(255, 255, 255, 0.95);
+    color: #2c3e50; /* Sophisticated dark color instead of bright red */
+    padding: 6px 14px;
+    border-radius: 18px; /* More rounded */
+    font-weight: 600; /* Semi-bold for better readability */
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); /* Softer shadow */
+    display: inline-block;
+    transform: scale(1);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    margin-bottom: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05); /* Subtle border */
+    font-family: 'Poppins', sans-serif; /* Consistent typography */
+    letter-spacing: 0.5px; /* Improved letter spacing */
+    position: relative;
+    overflow: hidden;
+}
+
+.price-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0));
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.custom-card:hover .price-badge {
+    transform: scale(1.1);
+    background: white;
+}
+
+.restaurant-header {
+    padding-bottom: .5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    
+}
+
+.restaurant-name {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: linear-gradient(to right, #3556dc, #4a7bf7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.table-badge {
+    display: inline-block;
+    background-color: rgba(53, 86, 220, 0.1);
+    color: #3556dc;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+   
+    padding: 0.5rem 1.5rem;
+    border: 1px solid rgba(53, 86, 220, 0.2);
+}
+
+.table-status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #28a745;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(0.95); opacity: 1; }
+}
+
+/* Cart Item Styling */
+.cart-item-container {
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.cart-item-container:hover {
+    background-color: #f9f9f9;
+}
+
+.cart-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.cart-item-name {
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.cart-item-price {
+    font-weight: 600;
+    color: #3556dc;
+    font-size: 0.95rem;
+}
+
+.cart-item-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.75rem 0;
+}
+
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.qty-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #555;
+}
+
+.qty-btn.minus {
+    border-color: #3556dc;
+    color: #3556dc;
+}
+
+.qty-btn.plus {
+    border-color: #3556dc;
+    color: #3556dc;
+}
+
+.qty-btn:hover {
+    background: #f8f8f8;
+}
+
+.quantity-display {
+    min-width: 24px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.remove-btn {
+    color: #dc3545;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.5rem;
+    background: none;
+    border: none;
+}
+
+.remove-btn:hover {
+    text-decoration: underline;
+}
+
+.cart-item-notes {
+    margin-top: 0.75rem;
+}
+
+.notes-input {
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.cart-item-subtotal {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed #eee;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.cart-item-subtotal span:last-child {
+    font-weight: 600;
+    color: #333;
+}
+
+@media (max-width: 768px) { 
+    .overlay:hover {
+        top: 0; 
+        height: 100%; 
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.4); /* Darker overlay for better visibility */
+    }
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+
+        <div class="restaurant-header text-center mb-4">
+            <h2 class="restaurant-name" style="color: #3556dc; font-weight: 600;">{{ restaurant}}</h2>
+            <p class="restaurant-tagline text-muted">{{ restaurant.tagline }}</p>
+            <p class="restaurant-tagline text-muted">"Crafted flavors, served with care."</p>
+            
+        </div>
+        <div class="table-indicator">
+            <span class="table-badge px-3 py-2">
+                <i class="fas fa-utensils me-2"></i>
+                Table {{ table.number }}
+            </span>
+        </div>
+        <!-- Floating Cart Button -->
+        <a class="btn cart-button position-fixed" 
+            data-bs-toggle="offcanvas" href="#offcanvasExample" 
+            role="button" aria-controls="offcanvasExample">
+                <i class="fas fa-shopping-cart fa-lg"></i>
+                <span id="cart-icon-count" class="badge bg-danger position-absolute">0</span>
+        </a>
+
+
+        <!-- Cart Sidebar -->
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title d-flex align-items-center">
+                    <i class="fas fa-shopping-bag me-2" style="color: #3556dc;"></i>
+                    Your Cart
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            
+            <div class="offcanvas-body">
+                <div id="cart-items" class="list-group">
+                    <p class="text-center">Cart is empty</p>
+                </div>
+                <div id="cart-total" class="text-center mt-3">
+                    <strong>Total: ₹0.00</strong>
+                </div>
+                <div class="text-center mt-4">
+                    <a href="{% url 'confirm_order' username=restaurant.username table_number=table.number %}" 
+                        class="btn btn-primary" 
+                        id="place-order-button" 
+                        onclick="return order()">Place Order
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scrollable Category Bar -->
+        <div class="category-bar d-flex overflow-auto my-3 p-2">
+            <button class="btn btn-outline-primary mx-2 category-btn active" onclick="filterCategory('all')">All</button>
+            {% for category in categories %}
+                <button class="btn btn-outline-primary mx-2 category-btn" onclick="filterCategory('{{ category.name }}')">{{ category.name }}</button>
+            {% endfor %}
+        </div>
+    
+        <!-- Menu Grid -->
+        <div id="menu-items" class="row">
+            {% for item in menu_items %}
+            <div class="col-6 col-sm-6 col-md-4 col-lg-3 mb-4 menu-item" data-category="{{ item.category.name }}">
+                <div class="card h-100 shadow-sm position-relative overflow-hidden custom-card" data-item-id="{{ item.id }}">
+                    <div class="image-container">
+                        <img src="{{ item.image.url }}" class="card-img-top" alt="{{ item.name }}">
+                    </div>
+            
+                    <!-- Overlay with Item Details -->
+                    <div class="overlay" id="overlay-{{ item.id }}">
+                        <div class="overlay-content">
+                            <div class="price-tag">
+                                <span class="price-badge">₹{{ item.price }}</span>
+                            </div>
+                            <!-- <p class="card-text">₹{{ item.price }}</p> -->
+                            <button type="button" class="btn btn-primary"
+                                id="add-to-cart-{{ item.id }}" 
+                                onclick="addToCart('{{ item.id }}', '{{ item.name }}', '{{ item.price }}');">
+                                Add to Cart
+                            </button>
+            
+                            <div class="quantity-controls mt-2 d-none" id="quantity-controls-{{ item.id }}">
+                                <button onclick="updateQuantity('{{ item.id }}', -1)">-</button>
+                                <input type="number" id="quantity-{{ item.id }}" class="quantity-input" value="1" min="1" readonly>
+                                <button onclick="updateQuantity('{{ item.id }}', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <h5 class="text-center mt-2">{{ item.name }}</h5>
+                </div>
+            
+                <!-- Item Name Below Card -->
+                
+            </div>
+            
+            
+            
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Add Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const username = "{{ restaurant.username }}";
+    //const tableId = "{{ table.id }}"; // Get table ID from Django template
+    //let cartKey = `cartData_${tableId}`; // Unique cart key per table
+    const tableNumber = "{{ table.number }}";
+    let cartKey = `cart_${username}_${tableNumber}`;
+    // Check if cart already exists in localStorage
+    //let cart = JSON.parse(localStorage.getItem(cartKey)) || {};
+    
+    let cart = JSON.parse(sessionStorage.getItem(cartKey)) || {};
+
+    console.log("Cart Data:", cart);
+
+    // If cart is empty, update the UI
+    if (Object.keys(cart).length === 0) {
+        updateCartUI(); // Ensure cart UI reflects empty state
+        updateMenuUI(); // Ensure menu items reflect empty cart state
+    }
+    
+    const cartTimestampKey = `${cartKey}_timestamp`;  // Store timestamp to track when cart was created
+
+    
+    function saveCart(cart) {
+        localStorage.setItem(cartKey, JSON.stringify(cart)); // Save cart in localStorage
+    }
+
+    function addToCart(id, name, price) {
+        if (!cart[id]) {
+            cart[id] = { name, price: parseFloat(price), quantity: 1, notes: "" };
+        } else {
+            cart[id].quantity += 1;
+        }
+
+        saveCart(cart); // Persist cart after adding items
+        updateCartUI();
+        updateMenuUI();
+    }
+
+    function updateQuantity(id, change) {
+        if (cart[id]) {
+            cart[id].quantity += change;
+            if (cart[id].quantity <= 0) {
+                delete cart[id]; // Remove item if quantity is zero
+            }
+        }
+
+        saveCart(cart); // Persist cart after updating quantity
+        updateCartUI();
+        updateMenuUI();
+    }
+
+    function updateCartUI() {
+        let cartContainer = document.getElementById("cart-items");
+        let cartIconCount = document.getElementById("cart-icon-count");
+        let cartTotal = document.getElementById("cart-total");
+
+        cartContainer.innerHTML = "";
+        let total = 0;
+        let uniqueItemCount = Object.keys(cart).length;
+
+        if (uniqueItemCount === 0) {
+            cartContainer.innerHTML = `
+                 <div class="empty-cart text-center py-5">
+                    <i class="fas fa-shopping-basket fa-4x mb-3" style="color: #ddd;"></i>
+                    <h5 class="text-muted">Your cart feels lonely</h5>
+                    <p class="text-muted">Add some delicious items!</p>
+                </div>
+            `;
+            cartIconCount.textContent = "0";
+            cartTotal.innerHTML = "<strong>Total: ₹0.00</strong>";
+            return;
+        }
+
+        for (let id in cart) {
+            let item = cart[id];
+            total += item.price * item.quantity;
+
+            let cartItem = document.createElement("div");
+            cartItem.classList.add("list-group-item", "d-flex", "justify-content-between", "align-items-center", "cart-item");
+            cartItem.innerHTML = `
+                <div class="cart-item-container w-100">
+                    <div class="cart-item-header">
+                        <h6 class="cart-item-name mb-1">${item.name}</h6>
+                        <span class="cart-item-price">₹${item.price.toFixed(2)}</span>
+                    </div>
+                    
+                    <div class="cart-item-controls">
+                        <div class="quantity-selector">
+                            <button class="btn qty-btn minus" onclick="updateQuantity('${id}', -1)">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <span class="quantity-display">${item.quantity}</span>
+                            <button class="btn qty-btn plus" onclick="updateQuantity('${id}', 1)">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        
+                        <button class="btn remove-btn" onclick="updateQuantity('${id}', -${item.quantity})">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                    
+                    <div class="cart-item-notes mt-2">
+                        <input type="text" 
+                            class="form-control notes-input" 
+                            placeholder="Customization options (e.g., no onions, extra spicy)"
+                            value="${item.notes || ''}"
+                            oninput="updateCartItemNotes('${id}', this.value)">
+                    </div>
+                    
+                    <div class="cart-item-subtotal">
+                        <span>Subtotal:</span>
+                        <span>₹${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+            
+            cartContainer.appendChild(cartItem);
+        }
+
+        cartIconCount.textContent = uniqueItemCount;
+        cartTotal.innerHTML = `<strong>Total: ₹${total.toFixed(2)}</strong>`;
+    }
+
+    window.updateCartItemNotes = function (id, notes) {
+        if (cart[id]) {
+            cart[id].notes = notes;
+            saveCart(cart); // Persist cart after updating notes
+        }
+    };
+
+    function updateMenuUI() {
+        document.querySelectorAll(".menu-item").forEach(menuItem => {
+            let itemId = menuItem.querySelector(".custom-card").getAttribute("data-item-id");
+            let addToCartBtn = menuItem.querySelector(`#add-to-cart-${itemId}`);
+            let quantityControls = menuItem.querySelector(`#quantity-controls-${itemId}`);
+            let quantityInput = menuItem.querySelector(`#quantity-${itemId}`);
+            let overlay = menuItem.querySelector(`#overlay-${itemId}`);
+
+            let cartItem = cart[itemId];
+
+            if (cartItem) {
+                menuItem.querySelector(".custom-card").classList.add("in-cart");
+                addToCartBtn.classList.add("d-none");
+                quantityControls.classList.remove("d-none");
+                quantityInput.value = cartItem.quantity;
+            } else {
+                menuItem.querySelector(".custom-card").classList.remove("in-cart");
+                addToCartBtn.classList.remove("d-none");
+                quantityControls.classList.add("d-none");
+            }
+        });
+    }
+
+    function order() {
+        if (Object.keys(cart).length === 0) {
+            alert("Your cart is empty!");
+            return false;
+        }
+
+        localStorage.setItem("cartData", JSON.stringify(cart));
+
+        // localStorage.removeItem(cartKey); // Empty cart after order
+        // localStorage.removeItem(cartTimestampKey); // Clear timestamp for this session
+        // cart = {};  // Reset cart in memory
+
+        updateCartUI();
+        updateMenuUI();
+
+        return true;
+    }
+
+    window.addToCart = addToCart;
+    window.updateQuantity = updateQuantity;
+    window.order = order;
+
+    updateCartUI();
+    updateMenuUI();
+
+    function filterCategory(category) {
+    let menuItems = document.querySelectorAll(".menu-item");
+
+    menuItems.forEach(item => {
+        let itemCategory = item.getAttribute("data-category");
+        if (category === "all" || itemCategory === category) {
+            item.style.display = "block";
+        } else {
+            item.style.display = "none";
+        }
+    });
+
+    // Remove active class from all category buttons
+    document.querySelectorAll(".category-btn").forEach(btn => {
+        btn.classList.remove("active");
+    });
+
+    // Add active class to the clicked button
+    event.target.classList.add("active");
+}
+
+// Ensure the function is accessible globally
+window.filterCategory = filterCategory;
+
+
+    const cartOffcanvas = document.getElementById("offcanvasExample");
+    let isCartOpen = false;
+
+    function openCart() {
+        if (!isCartOpen) {
+            history.pushState({ cartOpen: true }, "", "#cart");
+            isCartOpen = true;
+        }
+    }
+
+    function closeCart() {
+        if (isCartOpen) {
+            isCartOpen = false;
+            history.back(); // Go back to previous state
+        }
+    }
+
+    // Detect when the cart is opened
+    cartOffcanvas.addEventListener("show.bs.offcanvas", openCart);
+
+    // Detect when the cart is closed
+    cartOffcanvas.addEventListener("hide.bs.offcanvas", function () {
+        isCartOpen = false;
+    });
+
+    // Handle back button press
+    window.addEventListener("popstate", function (event) {
+        if (isCartOpen) {
+            // If cart is open, close it first
+            const bsOffcanvas = bootstrap.Offcanvas.getInstance(cartOffcanvas);
+            bsOffcanvas.hide();
+            isCartOpen = false;
+        } else {
+            // If cart is already closed, allow normal back navigation
+            history.back();
+        }
+    });
+
+    // Ensure initial state is set when page loads
+    history.replaceState({ menuOpen: true }, "", location.pathname);
+
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Details</title>
+
+    <style>
+       
+        body {
+            font-family: Arial, sans-serif;
+            
+            background-image: url('https://img.freepik.com/premium-photo/pasta-pappardelle-with-beef-ragout-sauce-black-bowl-grey-background-top-view_235573-740.jpg?semt=ais_hybrid');
+            background-repeat: no-repeat;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }   
+
+       
+        .form-container {
+            display: flex;
+            flex-direction: row;  
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 90%;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+      
+        .form-container img {
+            width: 40%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+       
+        .form-fields {
+            width: 50%;
+        }
+
+        
+        .form-fields h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+      
+        .form-fields input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+       
+        .form-fields button {
+            background-color: #ff6347;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .form-fields button:hover {
+            background-color: #ff7f50;
+        }
+
+      
+        @media (max-width: 768px) {
+            .form-container {
+                flex-direction: column;  
+                align-items: center;
+            }
+
+            .form-container img {
+                width: 100%; 
+                height: auto;
+                margin-bottom: 20px;
+            }
+
+            .form-fields {
+                width: 80%;  
+            }
+        }
+
+        @media (max-width: 480px) {
+            .form-fields h2 {
+                font-size: 20px; 
+            }
+
+            .form-fields input, .form-fields button {
+                font-size: 14px;  
+            }
+        }
+
+    </style>
+</head>
+<body >
+    <div class="form-container">
+       
+        <img src="https://media.restomontreal.ca/blog/792_2024-05-07-2119_blog.jpeg" alt="Image" />
+
+        
+        <div class="form-fields">
+            <h2>Enter Your Details</h2>
+            <form method="POST">
+                {% csrf_token %}
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" placeholder="Your Name" required>
+
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone_number" name="phone_number" placeholder="Your Phone Number" required>
+
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    
+    <!-- <div class="container" style="background: linear-gradient(to bottom right,purple,cyan);background-repeat: no-repeat;background-size: cover;" >
+        <div class="row" >
+            <center>
+                <div class="col-6">
+                    <br/><br>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                          <label> name</label>
+                          <input type="text" class="form-control" name="name" placeholder="Enter your name">
+                        </div>
+                        <br/>
+                        <br/>
+                        <div class="form-group">
+                          <label>number</label>
+                          <input type="text" class="form-control" name="phone_number" placeholder="Enter your number">
+                        </div>
+                        <br/><br/>
+                        <button type="submit" class="btn btn-secondary">login</button>
+                    </form>
+
+                    <br/><br/>
+                    <br/><br/>
+                    <br/><br/>
+                    <br/><br/>
+                </div>
+            </center>
+        </div>
+
+    </div>  -->
+</body>
+</html>

@@ -1,0 +1,437 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Daily Summary Header - Non-scrolling -->
+    <div class="card mb-4 bg-light border-0 shadow-sm">
+        <div class="card-body py-3">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-0">
+                        <i class="fas fa-receipt text-primary mr-2"></i>
+                        Billed Orders for Table {{ table.number }}
+                    </h3>
+                    <p class="text-muted mb-0 mt-1">
+                        <i class="far fa-calendar-alt mr-1"></i>
+                        {{ selected_date|date:"l, F j, Y" }}
+                        {% if selected_date == today %}<span class="badge badge-info ml-2">Today</span>{% endif %}
+                    </p>
+                </div>
+                <div class="col-md-4 d-flex justify-content-end gap-5">
+                    <div class="d-inline-block mr-4">
+                        <span class="text-muted d-block small">Total Orders</span>
+                        <span class="h4 font-weight-bold">{{ order_count }}</span>
+                    </div>
+                    <div class="d-inline-block">
+                        <span class="text-muted d-block small">Daily Total</span>
+                        <span class="h4 font-weight-bold text-success">₹{{ daily_total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section - Non-scrolling -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form method="get" class="form-inline justify-content-between">
+                <div class="form-group">
+                    <!-- <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                        </div>
+                        <select name="payment_method" class="form-control form-control-sm" onchange="this.form.submit()">
+                            <option value="">All Payment Methods</option>
+                            <option value="cash" {% if request.GET.payment_method == 'cash' %}selected{% endif %}>Cash</option>
+                            <option value="gpay" {% if request.GET.payment_method == 'gpay' %}selected{% endif %}>GPay</option>
+                            <option value="card" {% if request.GET.payment_method == 'card' %}selected{% endif %}>Card</option>
+                            <option value="pending" {% if request.GET.payment_method == 'pending' %}selected{% endif %}>Pending</option>
+                        </select>
+                    </div> -->
+                </div>
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="far fa-calendar"></i></span>
+                        </div>
+                        <input type="date" 
+                               name="date" 
+                               value="{{ selected_date|date:'Y-m-d' }}" 
+                               class="form-control form-control-sm"
+                               max="{{ today|date:'Y-m-d' }}"
+                               onchange="this.form.submit()">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scrollable Table Container -->
+    <div class="card border-0 shadow-sm" style="height: calc(100vh - 300px);">
+        <div class="table-responsive" style="height: 100%; overflow-y: auto;">
+            <table class="table table-hover mb-0">
+                <thead class="thead-light" style="position: sticky; top: 0; z-index: 1; background-color: #f8f9fa;">
+                    <tr>
+                        <!-- <th style="width: 5%">#</th>
+                        <th style="width: 12%">Order ID</th>
+                        <th style="width: 20%">Customer</th>
+                        <th style="width: 15%" class="text-right">Amount</th>
+                        <th style="width: 15%">Payment Method</th>
+                        <th style="width: 15%">Time</th> -->
+                        <!-- <th style="width: 18%">Actions</th> -->
+                        <th style="width: 8%">#</th>
+                        <th style="width: 12%">Order ID</th>
+                        <th style="width: 20%">Customer</th>
+                        <th style="width: 20%" class="text-right">Amount</th>
+                        <th style="width: 20%">Payment Method</th>
+                        <th style="width: 20%">Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if final_order_list %}
+                        {% for entry in final_order_list %}
+                            {% if entry.type == "single" %}
+                                <tr class="main-order">
+                                    <td>{{ entry.number }}</td>
+                                    <td>{{ entry.order.user_order_id }}</td>
+                                    <td>{{ entry.order.customer_name|default:"Guest" }}</td>
+                                    <td class="text-right">₹{{ entry.total_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="payment-badge 
+                                            {% if entry.order.payment_method == 'cash' %}cash
+                                            {% elif entry.order.payment_method == 'gpay' %}gpay
+                                            {% elif entry.order.payment_method == 'card' %}card
+                                            {% else %}pending{% endif %}">
+                                            {{ entry.order.get_payment_method_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ entry.order.updated_at|date:"h:i A" }}</td>
+                                    <!-- <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" onclick="viewBill('{{ entry.order.id }}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-success" onclick="reprintBill('{{ entry.order.id }}')">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                            {% if entry.order.payment_method == 'pending' %}
+                                            <button class="btn btn-outline-warning" onclick="showPaymentModal('{{ entry.order.id }}')">
+                                                <i class="fas fa-money-bill-wave"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td> -->
+                                </tr>
+                            {% elif entry.type == "combined" %}
+                                <!-- Combined Bill Header Row -->
+                                <tr class="main-order">
+                                    <td>{{ entry.number }}</td>
+                                    <td colspan="2">
+                                        <strong>({{ entry.orders|length }})</strong>
+                                    </td>
+                                    <td class="text-right"><strong>₹{{ entry.total_amount|floatformat:2 }}</strong></td>
+                                    <td>
+                                        <!-- <span class="payment-badge combined">
+                                            
+                                        </span> -->
+                                    </td>
+                                    <td>{{ entry.updated_at|date:"h:i A" }}</td>
+                                    <!-- <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" onclick="viewBill('{{ entry.identifier }}')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-success" onclick="reprintBill('{{ entry.identifier }}')">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                        </div>
+                                    </td> -->
+                                </tr>
+                                
+                                <!-- Sub-orders -->
+                                {% for order in entry.orders %}
+                                    <tr class="table-sm">
+                                        <td></td>
+                                        <td>{{ order.user_order_id}}</td>
+                                        <td>{{ order.customer_name|default:"Guest" }}</td>
+                                        <td class="text-right">₹{{ order.final_total|floatformat:2 }}</td>
+                                        <td>
+                                            <span class="payment-badge 
+                                                {% if order.payment_method == 'cash' %}cash
+                                                {% elif order.payment_method == 'gpay' %}gpay
+                                                {% elif order.payment_method == 'card' %}card
+                                                {% else %}pending{% endif %}">
+                                                {{ order.get_payment_method_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ order.updated_at|date:"h:i A" }}</td>
+                                        <td></td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    No billed orders found for {{ selected_date|date:"d M Y" }}
+                                    {% if selected_date == today %}yet{% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Bill Modal -->
+<div class="modal fade" id="billModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Order Bill Details</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="billModalContent">
+                <!-- Content will be loaded via AJAX -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printBill()">
+                    <i class="fas fa-print mr-1"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Method Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title">Update Payment Method</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="paymentOrderId">
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center payment-option" data-method="cash">
+                        <span><i class="fas fa-money-bill-wave mr-2"></i> Cash</span>
+                        <span class="badge cash">Cash</span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center payment-option" data-method="gpay">
+                        <span><i class="fab fa-google-pay mr-2"></i> GPay</span>
+                        <span class="badge gpay">GPay</span>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center payment-option" data-method="card">
+                        <span><i class="far fa-credit-card mr-2"></i> Credit Card</span>
+                        <span class="badge card">Card</span>
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Scrollbar styling */
+    .main-order {
+        background-color: #e9ecef !important; /* Light Grey */
+    }
+    .table-sm {
+        background-color: white !important;
+    }
+    .main-order td {
+        background-color: #e9ecef !important;
+    }
+    .table-responsive {
+        scrollbar-width: thin;
+        scrollbar-color: #adb5bd #f8f9fa;
+    }
+    
+    .table-responsive::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f8f9fa;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background-color: #adb5bd;
+        border-radius: 10px;
+    }
+    
+    /* Payment badges */
+    .payment-badge {
+        display: inline-block;
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 500;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 10rem;
+    }
+    
+    .payment-badge.cash {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .payment-badge.gpay {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .payment-badge.card {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    .payment-badge.pending {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .payment-badge.combined {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    /* Table row styling */
+    .table-sm td {
+        font-size: 0.875rem;
+    }
+    
+    .table-info td {
+        font-weight: 600;
+    }
+    
+    /* Button group styling */
+    .btn-group-sm > .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Fix for Firefox sticky header */
+    @-moz-document url-prefix() {
+        thead.thead-light {
+            background-color: #f8f9fa !important;
+        }
+    }
+</style>
+
+<script>
+// View bill details
+function viewBill(identifier) {
+    fetch(`/api/bill/${identifier.includes('-') ? 'combined' : 'order'}/${identifier}/`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('billModalContent').innerHTML = html;
+        $('#billModal').modal('show');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Failed to load bill details');
+    });
+}
+
+// Reprint bill
+function reprintBill(identifier) {
+    fetch(`/api/print/${identifier.includes('-') ? 'combined' : 'order'}/${identifier}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success('Print job sent successfully');
+        } else {
+            toastr.error('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Failed to communicate with print server');
+    });
+}
+
+// Print from modal
+function printBill() {
+    const printContent = document.getElementById('billModalContent').innerHTML;
+    const originalContent = document.body.innerHTML;
+    
+    document.body.innerHTML = printContent;
+    window.print();
+    document.body.innerHTML = originalContent;
+    window.location.reload();
+}
+
+// Show payment method modal
+function showPaymentModal(orderId) {
+    document.getElementById('paymentOrderId').value = orderId;
+    $('#paymentModal').modal('show');
+}
+
+// Handle payment method selection
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.payment-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const method = this.getAttribute('data-method');
+            const orderId = document.getElementById('paymentOrderId').value;
+            
+            fetch('/api/update-payment/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    payment_method: method
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success('Payment method updated successfully');
+                    $('#paymentModal').modal('hide');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    toastr.error('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                toastr.error('Failed to update payment method');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

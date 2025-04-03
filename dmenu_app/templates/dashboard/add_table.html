@@ -1,0 +1,119 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+
+<style>
+    .add-table-container {
+        max-width: 500px;
+        margin: 40px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .add-table-container h2 {
+        margin-bottom: 25px;
+        color: #333;
+        text-align: center;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+    
+    .btn-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-align: center;
+        flex: 1;
+    }
+    
+    .btn-primary {
+        background-color: #4a7bf7;
+        color: white;
+        border: none;
+    }
+    
+    .btn-secondary {
+        background-color: #f8f9fa;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    
+    .alert {
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .alert-error {
+        background-color: #fdecea;
+        color: #d32f2f;
+    }
+    
+    .alert-success {
+        background-color: #e8f5e9;
+        color: #388e3c;
+    }
+</style>
+
+<div class="add-table-container">
+    <h2><i class="fas fa-plus-circle"></i> Add New Table</h2>
+    
+    {% if messages %}
+    {% for message in messages %}
+        {% if message.extra_tags == request.resolver_match.url_name %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endif %}
+    {% endfor %}
+    {% endif %}
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="number">Table Number</label>
+            <input type="number" 
+                   id="number" 
+                   name="number" 
+                   class="form-control" 
+                   value="{{ suggested_number }}"
+                   min="1"
+                   required>
+        </div>
+        
+        <div class="btn-container">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Table
+            </button>
+            <a href="{% url 'dashboard_orders' username %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

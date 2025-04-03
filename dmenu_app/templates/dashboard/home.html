@@ -1,0 +1,363 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Metrics Row -->
+
+<div class="row mb-4">
+    <div class="d-flex justify-content-end mb-2">
+        <div class="input-group input-group-sm" style="width: 180px;">
+            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+            <input type="date" class="form-control form-control-sm" id="dateRange" 
+                   value="{{ selected_date|date:'Y-m-d' }}"
+                   max="{{ today|date:'Y-m-d' }}">
+        </div>
+    </div>
+          
+    <!-- Today's Sales -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Today's Sales</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ today_sales|floatformat:2 }}</div>
+                        <div class="mt-2">
+                            {% if growth_rate > 0 %}
+                            <span class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>
+                                {{ growth_rate }}%
+                            </span>
+                            {% else %}
+                            <span class="text-danger">
+                                <i class="fas fa-arrow-down me-1"></i>
+                                {{ growth_rate }}%
+                            </span>
+                            {% endif %}
+                            <span class="text-muted">vs yesterday</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-indian-rupee-sign fa-2x text-gray-300"></i>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Total Orders -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card secondary h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Orders</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_orders }}</div>
+                        <div class="mt-2">
+                            <span class="text-muted">{{ completed_orders }} completed</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Average Order Value -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card accent h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Avg. Order Value</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ avg_order_value|floatformat:2 }}</div>
+                        <div class="mt-2">
+                            <span class="text-muted">{{ avg_items_per_order|floatformat:1 }} items/order</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-shopping-basket fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Selling Item -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card info h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Top Selling Item</div>
+                        {% if top_item %}
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ top_item.menu_item__name|truncatechars:20 }}</div>
+                        <div class="mt-2">
+                            <span class="text-muted">{{ top_item.total_quantity }} sold (₹{{ top_item.total_revenue|floatformat:2 }})</span>
+                        </div>
+                        {% else %}
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">No sales yet</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-star fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<!-- <div class="row mb-4">
+    
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Sales Trend</h6>
+                <div class="dropdown no-arrow">
+                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
+                       data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                         aria-labelledby="dropdownMenuLink">
+                        <div class="dropdown-header">Chart Options:</div>
+                        <a class="dropdown-item" href="#" id="exportSalesChart">Export as PNG</a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Sales by Category</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                    {% for category in category_sales %}
+                    <span class="me-2">
+                        <i class="fas fa-circle" style="color: {{ category.color }}"></i> {{ category.menu_item__category__name }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div> -->
+
+<!-- Tables Row -->
+<div class="row">
+    <!-- Top Selling Items -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Top Selling Items</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Revenue</th>
+                                <th>% of Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in top_items %}
+                            <tr>
+                                <td>{{ item.menu_item__name }}</td>
+                                <td>{{ item.total_quantity }}</td>
+                                <td>₹{{ item.total_revenue|floatformat:2 }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                             style="width: {{ item.percentage }}%"
+                                             aria-valuenow="{{ item.percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small>{{ item.percentage|floatformat:1 }}%</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Table Performance -->
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Table Performance</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Table</th>
+                                <th>Orders</th>
+                                <th>Revenue</th>
+                                <!-- <th>Avg. Value</th> -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for table in table_performance %}
+                            <tr>
+                                <td>Table {{ table.table__number }}</td>
+                                <td>{{ table.order_count }}</td>
+                                <td>₹{{ table.total_revenue|floatformat:2 }}</td>
+                                <!-- <td>₹{{ table.avg_value|floatformat:2 }}</td> -->
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No table data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Charts -->
+<script>
+    // Sales Trend Chart
+    const salesCtx = document.getElementById('salesChart');
+    const salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: {{ sales_labels|safe }},
+            datasets: [{
+                label: 'Sales ($)',
+                data: {{ sales_data|safe }},
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '$' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Category Sales Chart
+    const categoryCtx = document.getElementById('categoryChart');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ category_labels|safe }},
+            datasets: [{
+                data: {{ category_data|safe }},
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                    '#5a5c69', '#858796', '#f8f9fc', '#5a5c69', '#858796'
+                ],
+                hoverBackgroundColor: [
+                    '#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617',
+                    '#4e5070', '#6b6d7e', '#e5e7e9', '#4e5070', '#6b6d7e'
+                ],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return '$' + context.parsed.toFixed(2);
+                        }
+                    }
+                }
+            },
+            cutout: '70%',
+        },
+    });
+    
+    // Export chart as PNG
+    document.getElementById('exportSalesChart').addEventListener('click', function() {
+        const url = salesChart.toBase64Image();
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'sales-chart.png';
+        link.click();
+    });
+
+    // Handle date range changes
+    $('#dateRange').change(function() {
+            const selectedDate = $(this).val();
+            window.location.href = `?date=${selectedDate}`;
+        });
+        
+        // Handle time period buttons
+        $('.time-period-btn').click(function() {
+            const period = $(this).data('period');
+            window.location.href = `?period=${period}`;
+        });
+        
+        // Initialize tooltips
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        });
+</script>
+{% endblock %}
