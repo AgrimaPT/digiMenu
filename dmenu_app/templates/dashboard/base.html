@@ -27,9 +27,16 @@
             background-color: #f8f9fc;
         }
         
+        @media (max-width: 767.98px) {
+            body {
+                padding-top: 60px;
+            }
+        }
+        
         .sidebar {
             background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
             min-height: 100vh;
+            transition: all 0.3s;
         }
         
         .sidebar .nav-link {
@@ -72,16 +79,136 @@
         .bg-gradient-primary {
             background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
         }
+
+        /* Mobile-specific styles */
+        @media (max-width: 767.98px) {
+            .sidebar {
+                position: fixed;
+                z-index: 1000;
+                left: -100%;
+                width: 280px;
+                top: 0;
+                bottom: 0;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            .sidebar-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 999;
+                display: none;
+            }
+        }
+        
+        .sidebar-toggler {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 900;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        
+        @media (max-width: 767.98px) {
+            .sidebar-toggler {
+                display: block;
+            }
+        }
+
+        .mobile-header {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--primary-color);
+            color: white;
+            z-index: 800;
+            padding: 10px 60px 10px 70px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .mobile-header h5 {
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        @media (max-width: 767.98px) {
+            .mobile-header {
+                display: flex;
+            }
+        }
+
+        /* Back button styles */
+        .back-btn-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .back-btn {
+            margin-right: 15px;
+            display: none;
+            align-items: center;
+        }
+        
+        .mobile-back-btn {
+            display: none;
+            margin-right: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .back-btn {
+                display: flex;
+            }
+        }
+        
+        @media (max-width: 767.98px) {
+            .mobile-back-btn {
+                display: flex;
+            }
+        }
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- Mobile Header - Only visible on small screens -->
+    <div class="mobile-header d-md-none">
+        <button class="sidebar-toggler" type="button">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h5>{{ request.user.get_username }}'s Restaurant</h5>
+    </div>
+
+    <!-- Sidebar Backdrop (for mobile) -->
+    <div class="sidebar-backdrop d-md-none"></div>
+
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 d-md-block sidebar collapse bg-gradient-primary">
                 <div class="position-sticky pt-3">
+                    <!-- Close button for mobile -->
+                    <button type="button" class="btn-close btn-close-white d-md-none float-end m-2 sidebar-close" aria-label="Close"></button>
+                    
                     <div class="text-center mb-4">
                         <h4 class="text-white">{{ request.user.get_username }}'s Restaurant</h4>
                     </div>
@@ -124,15 +251,16 @@
             <!-- Main Content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">{% block page_title %}Dashboard{% endblock %}</h1>
-                    <!-- <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary time-period-btn" data-period="today">Today</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary time-period-btn" data-period="week">Week</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary time-period-btn" data-period="month">Month</button>
-                        </div>
-                        <input type="date" class="form-control form-control-sm" id="dateRange" value="{{ today|date:'Y-m-d' }}">
-                    </div> -->
+                    <div class="back-btn-container">
+                        <button class="btn btn-outline-secondary back-btn" onclick="window.history.back()">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Back
+                        </button>
+                        <button class="btn btn-outline-secondary mobile-back-btn" onclick="window.history.back()">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <h1 class="h2 mb-0">{% block page_title %}Dashboard{% endblock %}</h1>
+                    </div>
                 </div>
                 
                 {% block content %}{% endblock %}
@@ -148,21 +276,55 @@
     
     <!-- Custom JS -->
     <script>
-        // Handle date range changes
-        $('#dateRange').change(function() {
-            const selectedDate = $(this).val();
-            window.location.href = `?date=${selectedDate}`;
-        });
-        
-        // Handle time period buttons
-        $('.time-period-btn').click(function() {
-            const period = $(this).data('period');
-            window.location.href = `?period=${period}`;
-        });
-        
-        // Initialize tooltips
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip()
+        $(document).ready(function() {
+            // Toggle sidebar on mobile
+            $('.sidebar-toggler').click(function() {
+                $('.sidebar').addClass('show');
+                $('.sidebar-backdrop').fadeIn();
+                $('body').css('overflow', 'hidden');
+            });
+            
+            // Close sidebar when clicking close button or backdrop
+            $('.sidebar-close, .sidebar-backdrop').click(function() {
+                $('.sidebar').removeClass('show');
+                $('.sidebar-backdrop').fadeOut();
+                $('body').css('overflow', 'auto');
+            });
+            
+            // Close sidebar when clicking a nav link on mobile
+            $('.sidebar .nav-link').click(function() {
+                if ($(window).width() < 768) {
+                    $('.sidebar').removeClass('show');
+                    $('.sidebar-backdrop').fadeOut();
+                    $('body').css('overflow', 'auto');
+                }
+            });
+            
+            // Handle window resize
+            $(window).resize(function() {
+                if ($(window).width() >= 768) {
+                    $('.sidebar').removeClass('show');
+                    $('.sidebar-backdrop').hide();
+                    $('body').css('overflow', 'auto');
+                }
+            });
+
+            // Set active link based on current URL
+            $('.nav-link').each(function() {
+                if (this.href === window.location.href) {
+                    $(this).addClass('active');
+                    $(this).parent().addClass('active-item');
+                } else {
+                    $(this).removeClass('active');
+                }
+            });
+
+            // Hide back button on dashboard home page
+            if(window.location.pathname === "{% url 'dashboard_home' username=request.user.username %}") {
+                $('.back-btn, .mobile-back-btn').hide();
+            }
+
+            
         });
     </script>
     
