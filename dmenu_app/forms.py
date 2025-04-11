@@ -2,6 +2,8 @@ from django import forms
 from .models import Category, MenuItem
 from django.utils.safestring import mark_safe
 from django.db.models import Max
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.models import User
 
 class CustomerDetailsForm(forms.Form):
     name = forms.CharField(max_length=100, label='Your Name')
@@ -116,3 +118,13 @@ class MenuItemForm(forms.ModelForm):
 #             #'gst_number': forms.TextInput(attrs={'class': 'form-control'}),
 #             'logo': forms.FileInput(attrs={'class': 'form-control'}),
 #         }
+
+
+
+# class UsernameRecoveryForm(forms.Form):
+#     email = forms.EmailField(
+#         label="Email",
+#         max_length=254,
+#         widget=forms.EmailInput(attrs={'autocomplete': 'email'})
+#     )
+

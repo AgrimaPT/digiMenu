@@ -1713,6 +1713,8 @@ def SignupPage(request):
         pass1 = request.POST.get('password1')
         pass2 = request.POST.get('password2')
 
+        
+
         if pass1 != pass2:
             messages.error(request, "Your password and confirm password do not match!")
             return redirect('signup')
@@ -1733,7 +1735,8 @@ def SignupPage(request):
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
             return redirect('signup')
-
+         # Clear any non-signup messages when loading the page
+    
     return render(request, 'dashboard/signup.html')
 from django.urls import reverse
 
@@ -1741,6 +1744,8 @@ def LoginPage(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         pass1 = request.POST.get('pass')
+        
+         # Clear any existing messages to prevent mixing
         
         # Basic validation
         if not username or not pass1:
@@ -1755,7 +1760,7 @@ def LoginPage(request):
         
         # Return to login page with messages
         return redirect('login')  # Assuming 'login' is your URL name
-
+    
     return render(request, 'dashboard/login.html')
 
 
@@ -1805,47 +1810,190 @@ from django.core.cache import cache
 from collections import defaultdict
 from django.db.models.functions import Coalesce
 import colorsys
+# @never_cache
+# @login_required
+# def dashboard_home(request, username):
+#     if request.user.username != username:
+#         return redirect('login')
+    
+#     # Get date filter from request
+#     filter_date = get_date_filter(request)
+    
+#     # Check cache first
+#     cache_key = f'dashboard_{username}_{filter_date}'
+#     cached_data = cache.get(cache_key)
+    
+#     if cached_data:
+#         return render(request, 'dashboard/home.html', cached_data)
+    
+#     # Date ranges
+#     today = timezone.localdate() 
+#     date_range, previous_date_range = get_date_ranges(filter_date)
+    
+#     # Get all orders for the selected period
+#     orders = Order.objects.filter(
+#         user=request.user,
+#         created_at__date__in=date_range,
+#         billed=True
+#     ).select_related('table')
+    
+#     # Get previous period orders for comparison
+#     previous_orders = Order.objects.filter(
+#         user=request.user,
+#         created_at__date__in=previous_date_range,
+#         billed=True
+#     )
+    
+#     # 1. Calculate key metrics
+#     today_sales = orders.aggregate(total=Sum('final_total'))['total'] or 0
+#     previous_sales = previous_orders.aggregate(total=Sum('final_total'))['total'] or 0
+    
+#     growth_rate = 0
+#     if previous_sales > 0:
+#         growth_rate = ((today_sales - previous_sales) / previous_sales) * 100
+    
+#     # 2. Order statistics
+#     total_orders = orders.count()
+#     completed_orders = orders.filter(status='Completed').count()
+    
+#     avg_order_value = 0
+#     if total_orders > 0:
+#         avg_order_value = today_sales / total_orders
+    
+#     # 3. Top selling items
+#     top_items = OrderItem.objects.filter(
+#     order__in=orders
+# ).values(
+#     'menu_item__name'
+# ).annotate(
+#     total_quantity=Sum('quantity'),
+#     total_revenue=Sum(F('quantity') * F('price'))
+# ).order_by('-total_quantity')[:10]  # Now sorting by quantity sold
+
+#     # Calculate percentage of total sales for each item
+#     if today_sales > 0:
+#         for item in top_items:
+#             item['percentage'] = (item['total_revenue'] / today_sales) * 100
+    
+#     top_item = top_items.first() if top_items.exists() else None
+    
+#     # 4. Table performance
+#     table_performance = orders.values(
+#         'table__number'
+#     ).annotate(
+#         order_count=Count('id'),
+#         total_revenue=Sum('final_total'),
+#         avg_value=ExpressionWrapper(
+#             F('total_revenue') / F('order_count'),
+#             output_field=DecimalField()
+#         )
+#     ).order_by('-total_revenue')
+    
+#     # 5. Sales trend data
+#     daily_sales = orders.values(
+#         'created_at__date'
+#     ).annotate(
+#         daily_total=Sum('final_total')
+#     ).order_by('created_at__date')
+    
+#     # Fill in missing dates with zero
+#     sales_dict = {sale['created_at__date']: float(sale['daily_total']) for sale in daily_sales}
+#     sales_data = [sales_dict.get(date, 0) for date in date_range]
+#     sales_labels = [date.strftime('%a %d') for date in date_range]
+    
+#     # 6. Category sales data
+#     category_sales = OrderItem.objects.filter(
+#         order__in=orders
+#     ).values(
+#         'menu_item__category__name'
+#     ).annotate(
+#         category_total=Sum(F('quantity') * F('price'))
+#     ).order_by('-category_total')
+    
+#     # Generate distinct colors for categories
+#     category_colors = generate_colors(category_sales.count())
+#     for i, category in enumerate(category_sales):
+#         category['color'] = category_colors[i]
+    
+#     category_labels = [item['menu_item__category__name'] for item in category_sales]
+#     category_data = [float(item['category_total']) for item in category_sales]
+    
+#     # Calculate average items per order
+#     total_items = OrderItem.objects.filter(
+#         order__in=orders
+#     ).aggregate(total=Sum('quantity'))['total'] or 0
+#     avg_items_per_order = total_items / total_orders if total_orders > 0 else 0
+    
+#     context = {
+#         'today': today,
+#         'today_sales': today_sales,
+#         'growth_rate': round(growth_rate, 2),
+#         'total_orders': total_orders,
+#         'completed_orders': completed_orders,
+#         'avg_order_value': round(avg_order_value, 2),
+#         'avg_items_per_order': round(avg_items_per_order, 1),
+#         'top_items': top_items,
+#         'top_item': top_item,
+#         'table_performance': table_performance,
+#         'sales_labels': sales_labels,
+#         'sales_data': sales_data,
+#         'category_sales': category_sales,
+#         'category_labels': category_labels,
+#         'category_data': category_data,
+#         'selected_date': filter_date,
+#     }
+    
+#     # Cache for 1 hour
+#     # cache.set(cache_key, context, timeout=3600)
+
+#     # if filter_date != timezone.localdate():
+#     #     cache.set(cache_key, context, timeout=3600)
+
+    
+#     return render(request, 'dashboard/home.html', context)
+    
+from django.shortcuts import render, redirect
+from django.views.decorators.cache import never_cache
+from django.contrib.auth.decorators import login_required
+from django.db.models import Sum, Count, F, ExpressionWrapper, DecimalField
+from django.db.models.functions import ExtractHour
+from django.utils import timezone
+from datetime import datetime, timedelta
+from .models import Order, OrderItem
+
 @never_cache
 @login_required
 def dashboard_home(request, username):
     if request.user.username != username:
         return redirect('login')
     
-    # Get date filter from request
+    # Get and validate the filter date
     filter_date = get_date_filter(request)
     
-    # Check cache first
-    cache_key = f'dashboard_{username}_{filter_date}'
-    cached_data = cache.get(cache_key)
-    
-    if cached_data:
-        return render(request, 'dashboard/home.html', cached_data)
-    
-    # Date ranges
-    today = timezone.localdate() 
+    # Get date ranges - simplified to single day comparison
     date_range, previous_date_range = get_date_ranges(filter_date)
     
-    # Get all orders for the selected period
+    # Get orders for the SPECIFIC selected date
     orders = Order.objects.filter(
         user=request.user,
-        created_at__date__in=date_range,
+        created_at__date=date_range[0],  # Exact date match
         billed=True
     ).select_related('table')
     
-    # Get previous period orders for comparison
+    # Get previous day's orders for comparison
     previous_orders = Order.objects.filter(
         user=request.user,
-        created_at__date__in=previous_date_range,
+        created_at__date=previous_date_range[0],
         billed=True
     )
     
     # 1. Calculate key metrics
-    today_sales = orders.aggregate(total=Sum('final_total'))['total'] or 0
+    current_sales = orders.aggregate(total=Sum('final_total'))['total'] or 0
     previous_sales = previous_orders.aggregate(total=Sum('final_total'))['total'] or 0
     
     growth_rate = 0
     if previous_sales > 0:
-        growth_rate = ((today_sales - previous_sales) / previous_sales) * 100
+        growth_rate = ((current_sales - previous_sales) / previous_sales) * 100
     
     # 2. Order statistics
     total_orders = orders.count()
@@ -1853,22 +2001,21 @@ def dashboard_home(request, username):
     
     avg_order_value = 0
     if total_orders > 0:
-        avg_order_value = today_sales / total_orders
+        avg_order_value = current_sales / total_orders
     
     # 3. Top selling items
     top_items = OrderItem.objects.filter(
-    order__in=orders
-).values(
-    'menu_item__name'
-).annotate(
-    total_quantity=Sum('quantity'),
-    total_revenue=Sum(F('quantity') * F('price'))
-).order_by('-total_quantity')[:10]  # Now sorting by quantity sold
+        order__in=orders
+    ).values(
+        'menu_item__name'
+    ).annotate(
+        total_quantity=Sum('quantity'),
+        total_revenue=Sum(F('quantity') * F('price'))
+    ).order_by('-total_quantity')[:10]
 
-    # Calculate percentage of total sales for each item
-    if today_sales > 0:
+    if current_sales > 0:
         for item in top_items:
-            item['percentage'] = (item['total_revenue'] / today_sales) * 100
+            item['percentage'] = (item['total_revenue'] / current_sales) * 100
     
     top_item = top_items.first() if top_items.exists() else None
     
@@ -1884,17 +2031,17 @@ def dashboard_home(request, username):
         )
     ).order_by('-total_revenue')
     
-    # 5. Sales trend data
-    daily_sales = orders.values(
-        'created_at__date'
-    ).annotate(
-        daily_total=Sum('final_total')
-    ).order_by('created_at__date')
+    # 5. Sales trend data - hourly for single day
+    hourly_sales = orders.annotate(
+        hour=ExtractHour('created_at')
+    ).values('hour').annotate(
+        hourly_total=Sum('final_total')
+    ).order_by('hour')
     
-    # Fill in missing dates with zero
-    sales_dict = {sale['created_at__date']: float(sale['daily_total']) for sale in daily_sales}
-    sales_data = [sales_dict.get(date, 0) for date in date_range]
-    sales_labels = [date.strftime('%a %d') for date in date_range]
+    # Fill all 24 hours
+    sales_dict = {sale['hour']: float(sale['hourly_total']) for sale in hourly_sales}
+    sales_data = [sales_dict.get(hour, 0) for hour in range(24)]
+    sales_labels = [f"{hour}:00" for hour in range(24)]
     
     # 6. Category sales data
     category_sales = OrderItem.objects.filter(
@@ -1910,9 +2057,6 @@ def dashboard_home(request, username):
     for i, category in enumerate(category_sales):
         category['color'] = category_colors[i]
     
-    category_labels = [item['menu_item__category__name'] for item in category_sales]
-    category_data = [float(item['category_total']) for item in category_sales]
-    
     # Calculate average items per order
     total_items = OrderItem.objects.filter(
         order__in=orders
@@ -1920,8 +2064,9 @@ def dashboard_home(request, username):
     avg_items_per_order = total_items / total_orders if total_orders > 0 else 0
     
     context = {
-        'today': today,
-        'today_sales': today_sales,
+        'today': timezone.localdate(),
+        'selected_date': filter_date,
+        'today_sales': current_sales,
         'growth_rate': round(growth_rate, 2),
         'total_orders': total_orders,
         'completed_orders': completed_orders,
@@ -1933,44 +2078,93 @@ def dashboard_home(request, username):
         'sales_labels': sales_labels,
         'sales_data': sales_data,
         'category_sales': category_sales,
-        'category_labels': category_labels,
-        'category_data': category_data,
-        'selected_date': filter_date,
+        'category_labels': [item['menu_item__category__name'] for item in category_sales],
+        'category_data': [float(item['category_total']) for item in category_sales],
     }
     
-    # Cache for 1 hour
-    # cache.set(cache_key, context, timeout=3600)
-    
     return render(request, 'dashboard/home.html', context)
-    
-    
+
+
 def get_date_filter(request):
-    """Get date filter from request parameters"""
-    if 'date' in request.GET:
+    """Get and validate date from request parameters"""
+    if 'date' in request.GET and request.GET['date']:
         try:
-            return datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+            selected_date = datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+            if selected_date <= timezone.localdate():  # Only allow past dates
+                return selected_date
         except (ValueError, TypeError):
             pass
-    return timezone.localdate()
+    return timezone.localdate()  # Default to today
+
+
 def get_date_ranges(filter_date):
     """Get date ranges for current and previous periods"""
-    if filter_date == timezone.now().date():  # Today
-        date_range = [filter_date]
-        previous_date_range = [filter_date - timedelta(days=1)]
-    elif filter_date.weekday() == 0:  # Week starting Monday
-        date_range = [filter_date + timedelta(days=i) for i in range(7)]
-        previous_date_range = [filter_date - timedelta(days=7+i) for i in range(7)]
-    elif filter_date.day == 1:  # Month
-        next_month = filter_date.replace(day=28) + timedelta(days=4)
-        last_day = next_month - timedelta(days=next_month.day)
-        date_range = [filter_date + timedelta(days=i) for i in range((last_day - filter_date).days + 1)]
+    # For any selected date, compare with previous day
+    date_range = [filter_date]
+    previous_date_range = [filter_date - timedelta(days=1)]
+    return date_range, previous_date_range
+
+
+def generate_colors(count):
+    """Generate distinct colors for categories"""
+    import colorsys
+    colors = []
+    for i in range(count):
+        hue = i * (360 / max(count, 1))
+        rgb = colorsys.hsv_to_rgb(hue/360, 0.7, 0.8)
+        colors.append('#%02x%02x%02x' % (int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255)))
+    return colors 
+# def get_date_filter(request):
+#     """Get date filter from request parameters"""
+#     if 'date' in request.GET:
+#         try:
+#             return datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+#         except (ValueError, TypeError):
+#             pass
+#     return timezone.localdate()
+
+from datetime import datetime
+from django.utils import timezone
+
+def get_date_filter(request):
+    """Get date filter from request parameters with proper validation"""
+    if 'date' in request.GET and request.GET['date']:
+        try:
+            selected_date = datetime.strptime(request.GET['date'], '%Y-%m-%d').date()
+            # Ensure date is not in the future
+            if selected_date <= timezone.localdate():
+                return selected_date
+        except (ValueError, TypeError):
+            pass
+    # Default to today if no valid date provided
+    return timezone.localdate()
+# def get_date_ranges(filter_date):
+#     """Get date ranges for current and previous periods"""
+#     if filter_date == timezone.now().date():  # Today
+#         date_range = [filter_date]
+#         previous_date_range = [filter_date - timedelta(days=1)]
+#     elif filter_date.weekday() == 0:  # Week starting Monday
+#         date_range = [filter_date + timedelta(days=i) for i in range(7)]
+#         previous_date_range = [filter_date - timedelta(days=7+i) for i in range(7)]
+#     elif filter_date.day == 1:  # Month
+#         next_month = filter_date.replace(day=28) + timedelta(days=4)
+#         last_day = next_month - timedelta(days=next_month.day)
+#         date_range = [filter_date + timedelta(days=i) for i in range((last_day - filter_date).days + 1)]
         
-        prev_month = filter_date.replace(day=1) - timedelta(days=1)
-        previous_date_range = [prev_month.replace(day=1) + timedelta(days=i) 
-                             for i in range((prev_month - prev_month.replace(day=1)).days + 1)]
-    else:  # Custom single date
-        date_range = [filter_date]
-        previous_date_range = [filter_date - timedelta(days=1)]
+#         prev_month = filter_date.replace(day=1) - timedelta(days=1)
+#         previous_date_range = [prev_month.replace(day=1) + timedelta(days=i) 
+#                              for i in range((prev_month - prev_month.replace(day=1)).days + 1)]
+#     else:  # Custom single date
+#         date_range = [filter_date]
+#         previous_date_range = [filter_date - timedelta(days=1)]
+    
+#     return date_range, previous_date_range
+
+def get_date_ranges(filter_date):
+    """Get date ranges for current and previous periods"""
+    # For any selected date, we'll compare with the previous day
+    date_range = [filter_date]
+    previous_date_range = [filter_date - timedelta(days=1)]
     
     return date_range, previous_date_range
 
@@ -2054,3 +2248,31 @@ def update_payment_method(request, order_id):
 #     }
     
 #     return render(request, 'dashboard/home.html', context)
+
+from django.core.mail import send_mail
+from django.http import HttpResponse
+
+def test_email(request):
+    send_mail(
+        'Test Email',
+        'This is a test email from Django.',
+        'your-email@gmail.com',
+        ['agrimapt1999@gmail.com'],
+        fail_silently=False,
+    )
+    return HttpResponse("Test email sent!")
+
+def check_unbilled_orders(request):
+    phone = request.GET.get('phone')
+    restaurant = request.GET.get('restaurant')
+    
+    if not phone or not restaurant:
+        return JsonResponse({'error': 'Missing parameters'}, status=400)
+    
+    has_unbilled = Order.objects.filter(
+        customer_phone=phone,
+        billed=False,
+        user__username=restaurant
+    ).exists()
+    
+    return JsonResponse({'has_unbilled_orders': has_unbilled})

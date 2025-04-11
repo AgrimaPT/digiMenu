@@ -121,6 +121,12 @@
             margin-bottom: 1rem;
         }
         
+        .privacy-notice {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        
         @media (max-width: 576px) {
             .confirmation-container {
                 padding: 1.5rem;
@@ -149,7 +155,10 @@
             
             <div class="mb-4">
                 <h4><i class="fas fa-user-circle me-2"></i>Your Details</h4>
-                <div class="row mt-3">
+                <div class="privacy-notice">
+                    <i class="fas fa-info-circle"></i> Your details will be saved for future orders until your current orders are completed.
+                </div>
+                <div class="row mt-2">
                     <div class="col-md-6 mb-3">
                         <label for="customer-name" class="form-label">Full Name</label>
                         <input type="text" id="customer-name" name="customer_name" class="form-control" placeholder="Enter your name" required>
@@ -178,23 +187,60 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Storage keys
             const username = "{{ restaurant.username }}";
             const tableNumber = "{{ table.number }}";
             const cartKey = `cart_${username}_${tableNumber}`;
-            let cart = JSON.parse(localStorage.getItem(cartKey) || {});
-            console.log("Cart data retrieved:", cart);
-
-            const form = document.getElementById("confirm-order-form");
-            form.addEventListener("submit", function (event) {
-                if (Object.keys(cart).length === 0) {
-                    event.preventDefault();
-                    alert("Your cart is empty. Please add items before confirming the order.");
-                    return;
+            const customerKey = `customer_${username}_${tableNumber}`;
+            
+            // Load cart data
+            let cart = JSON.parse(localStorage.getItem(cartKey)) || {};
+            
+            // ======================
+            // CUSTOMER DATA HANDLING
+            // ======================
+            
+            function loadCustomerData() {
+                const savedCustomer = JSON.parse(localStorage.getItem(customerKey)) || {};
+                
+                if (savedCustomer.phone) {
+                    // Check if this customer has any unbilled orders
+                    fetch(`/api/check-unbilled-orders/?phone=${encodeURIComponent(savedCustomer.phone)}&restaurant=${username}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.has_unbilled_orders) {
+                                document.getElementById("customer-name").value = savedCustomer.name || '';
+                                document.getElementById("customer-phone").value = savedCustomer.phone;
+                            } else {
+                                // Clear if all orders are billed
+                                localStorage.removeItem(customerKey);
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error checking order status:", error);
+                            // Fallback - show saved data but don't persist
+                            document.getElementById("customer-name").value = savedCustomer.name || '';
+                            document.getElementById("customer-phone").value = savedCustomer.phone;
+                        });
                 }
-                document.getElementById("cart-items").value = JSON.stringify(cart);
-                localStorage.removeItem(cartKey);
-            });
-
+            }
+            
+            function saveCustomerData() {
+                const customerInfo = {
+                    name: document.getElementById("customer-name").value.trim(),
+                    phone: document.getElementById("customer-phone").value.trim(),
+                    timestamp: new Date().toISOString()
+                };
+                
+                if (customerInfo.phone) {
+                    localStorage.setItem(customerKey, JSON.stringify(customerInfo));
+                }
+            }
+            
+            // =================
+            // ORDER SUMMARY UI
+            // =================
+            
             function populateOrderSummary() {
                 const orderSummaryDiv = document.getElementById("order-summary");
                 const orderTotalDiv = document.getElementById("order-total");
@@ -236,8 +282,50 @@
 
                 orderTotalDiv.innerHTML = `<strong>Total: ₹${total.toFixed(2)}</strong>`;
             }
-
+            
+            // ==============
+            // FORM HANDLING
+            // ==============
+            
+            function setupFormSubmission() {
+                const form = document.getElementById("confirm-order-form");
+                
+                form.addEventListener("submit", function (event) {
+                    // Validate cart isn't empty
+                    if (Object.keys(cart).length === 0) {
+                        event.preventDefault();
+                        alert("Your cart is empty. Please add items before confirming the order.");
+                        return;
+                    }
+                    
+                    // Validate phone number
+                    const phone = document.getElementById("customer-phone").value.trim();
+                    if (!phone) {
+                        event.preventDefault();
+                        alert("Please enter a valid phone number.");
+                        return;
+                    }
+                    
+                    // Save customer data
+                    saveCustomerData();
+                    
+                    // Prepare cart data for server submission
+                    document.getElementById("cart-items").value = JSON.stringify(cart);
+                });
+            }
+            
+            // =============
+            // INITIALIZATION
+            // =============
+            
+            // Load customer data if available
+            loadCustomerData();
+            
+            // Set up the order summary display
             populateOrderSummary();
+            
+            // Configure form submission handler
+            setupFormSubmission();
         });
     </script>
 </body>

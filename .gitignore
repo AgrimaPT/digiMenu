@@ -4,6 +4,7 @@ db.sqlite3
 # Ignore media/uploads
 media/
 
+
 # Ignore compiled Python files
 __pycache__/
 *.pyc
@@ -18,3 +19,5 @@ venv/
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+.env

@@ -190,6 +190,153 @@
             text-decoration: underline;
         }
         
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close-modal:hover {
+            color: var(--highlight);
+        }
+        
+        .modal-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 22px;
+            margin-bottom: 5px;
+            color: white;
+        }
+        
+        .modal-header p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn-primary {
+            background: var(--highlight);
+            color: white;
+        }
+        
+        .modal-btn-primary:hover {
+            background: #d13354;
+        }
+        
+        .modal-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .modal-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .forgot-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .forgot-option {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .forgot-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .forgot-option i {
+            margin-right: 10px;
+            color: var(--highlight);
+        }
+        
+        /* Recovery Form Styles */
+        .recovery-form {
+            display: none;
+        }
+        
+        .recovery-form.active {
+            display: block;
+        }
+        
+        .back-to-options {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: var(--highlight);
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .back-to-options:hover {
+            text-decoration: underline;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 480px) {
             .login-container {
@@ -207,6 +354,14 @@
             .input-group i {
                 top: 38px;
                 font-size: 14px;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
             }
         }
         
@@ -250,6 +405,8 @@
                 {% endfor %}
             </div>
             {% endif %}
+
+            
             
             <div class="input-group">
                 <label for="username">Username</label>
@@ -263,15 +420,15 @@
                 <input type="password" id="password" name="pass" placeholder="Enter your password" required>
             </div>
             
-            <!-- <div class="remember-forgot">
+            <div class="remember-forgot">
                 <div class="remember-me">
                     <input type="checkbox" id="remember">
                     <label for="remember">Remember me</label>
                 </div>
                 <div class="forgot-password">
-                    <a href="#">Forgot password?</a>
+                    <a href="{% url 'reset_password'%}" id="forgot-link">Forgot password?</a>
                 </div>
-            </div> -->
+            </div>
             
             <button type="submit" class="login-button">Log In</button>
             
@@ -280,5 +437,6 @@
             </div>
         </form>
     </div>
+
 </body>
 </html>

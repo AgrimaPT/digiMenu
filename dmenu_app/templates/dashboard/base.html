@@ -80,6 +80,31 @@
             background: linear-gradient(180deg, var(--primary-color) 10%, #224abe 100%);
         }
 
+        .adaptive-back-btn {
+    margin-right: 15px;
+    border: 1px solid var(--dark-color) !important;
+    color: var(--dark-color);
+    background: transparent;
+    /* Mobile styling (default) */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* Desktop styling */
+@media (min-width: 768px) {
+    .adaptive-back-btn {
+        width: auto;
+        height: auto;
+        padding: 6px 12px;
+        border-radius: 4px;
+    }
+}
+
         /* Mobile-specific styles */
         @media (max-width: 767.98px) {
             .sidebar {
@@ -252,12 +277,17 @@
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                     <div class="back-btn-container">
-                        <button class="btn btn-outline-secondary back-btn" onclick="window.history.back()">
+                        <!-- <button class="btn btn-outline-secondary back-btn" onclick="window.history.back()">
                             <i class="fas fa-arrow-left me-2"></i>
                             Back
                         </button>
                         <button class="btn btn-outline-secondary mobile-back-btn" onclick="window.history.back()">
                             <i class="fas fa-arrow-left"></i>
+                        </button> -->
+                        <button class="btn adaptive-back-btn" onclick="window.history.back()">
+                            <i class="fas fa-arrow-left me-2 d-none d-md-inline"></i>
+                            <span class="d-none d-md-inline">Back</span>
+                            <i class="fas fa-arrow-left d-md-none"></i>
                         </button>
                         <h1 class="h2 mb-0">{% block page_title %}Dashboard{% endblock %}</h1>
                     </div>

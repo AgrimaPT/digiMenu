@@ -12,19 +12,19 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(BASE_DIR / ".env") 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-aq(9s_k6s^0qc7f)!iff)p!3$lu^t#voy4i=7-o6dpb^-44cks'
-
+SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG =os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = ['*']
 
@@ -150,4 +150,44 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+
+# Email settings (configure according to your email provider)
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# EMAIL_HOST = 'in-v3.mailjet.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = '603bb17f4e1fd33ef7c17488e7f08659'
+# EMAIL_HOST_PASSWORD = 'f003cc54a61471cfed18df6661471f14'
+# DEFAULT_FROM_EMAIL = 'agrimapt99@gmail.com'
+
+# # Password reset timeout in seconds (default is 3 days)
+# PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3  # 3 days
+
+# # Site information (used in emails)
+# SITE_NAME = "Your Site Name"
+
+# settings.py
+
+# For DEVELOPMENT (emails to console)
+# if DEBUG:
+#     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# else:
+    # For PRODUCTION (real emails via Mailjet)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
+# DEFAULT_FROM_EMAIL = 'agrimapt99@gmail.com'
+# SERVER_EMAIL = 'agrimapt99@gmail.com'  # For error notifications
+
+# Password reset timeout
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 24 * 3  # 3 days
+
+# Site information
+SITE_NAME = "Your Site Name"
 

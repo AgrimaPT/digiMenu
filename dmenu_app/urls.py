@@ -3,6 +3,7 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
 
@@ -81,9 +82,14 @@ urlpatterns = [
     path('<str:username>/update-item-status/', views.update_item_status, name='update_item_status'),
     path('update-payment-method/<int:order_id>/', views.update_payment_method, name='update_payment_method'),
 
+    path('reset_password/',auth_views.PasswordResetView.as_view(template_name="dashboard/password_reset.html"),name="reset_password"),
+    path('reset_password_sent/',auth_views.PasswordResetDoneView.as_view(template_name="dashboard/password_reset_done.html"),name="password_reset_done"),
+    path('reset/<uidb64>/<token>/',auth_views.PasswordResetConfirmView.as_view(template_name="dashboard/password_reset_confirm.html"),name="password_reset_confirm"),
+    path('reset_password_complete/',auth_views.PasswordResetCompleteView.as_view(template_name="dashboard/password_reset_complete.html"),name="password_reset_complete"),
+
+    path('test-email/', views.test_email, name='test_email'),
+    path('api/check-unbilled-orders/', views.check_unbilled_orders, name='check_unbilled_orders'),
     # path('reports/sales/', views.daily_sales_report, name='sales_report'),
-
-
 
 ]
 

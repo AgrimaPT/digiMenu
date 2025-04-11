@@ -198,6 +198,7 @@
 
     <div class="table-container">
         <div class="table-wrapper">
+            {% if cat %}
             <table>
                 <thead>
                     <tr>
@@ -225,7 +226,7 @@
                             </div>
                         </td>
                     </tr>
-                    {% empty %}
+                    <!-- {% empty %}
                     <tr>
                         <td colspan="3" class="empty-state">
                             <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
@@ -235,10 +236,20 @@
                                 <i class="fas fa-plus"></i> Add Category
                             </a>
                         </td>
-                    </tr>
+                    </tr> -->
                     {% endfor %}
                 </tbody>
             </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <h3>No Categories Found</h3>
+                <p>Add your first category to get started</p>
+                <a href="{% url 'add_category' request.user.username %}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus"></i> Add Category
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
