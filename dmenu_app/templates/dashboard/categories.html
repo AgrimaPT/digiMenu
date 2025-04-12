@@ -195,8 +195,10 @@
             <i class="fas fa-plus"></i> Add New Category
         </a>
     </div>
-
+    <p>Total categories: {{ cat|length }}</p>
     <div class="table-container">
+        
+
         <div class="table-wrapper">
             {% if cat %}
             <table>
@@ -226,17 +228,7 @@
                             </div>
                         </td>
                     </tr>
-                    <!-- {% empty %}
-                    <tr>
-                        <td colspan="3" class="empty-state">
-                            <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <h3>No Categories Found</h3>
-                            <p>Add your first category to get started</p>
-                            <a href="{% url 'add_category' request.user.username %}" class="btn btn-primary mt-2">
-                                <i class="fas fa-plus"></i> Add Category
-                            </a>
-                        </td>
-                    </tr> -->
+                
                     {% endfor %}
                 </tbody>
             </table>

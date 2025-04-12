@@ -155,36 +155,22 @@ def dashboard_categories(request, username):
     user = get_user_or_404(username)
     cat = Category.objects.filter(user=user)
     
-    if request.method == 'POST':
-        form = CategoryForm(request.POST)
-        if form.is_valid():
-            category = form.save(commit=False)
-            category.user = user
-            category.save()
-            messages.success(request, "Category added successfully!")
-            return redirect('dashboard_categories', username=username)
-    else:
-        form = CategoryForm()
+    # if request.method == 'POST':
+    #     form = CategoryForm(request.POST)
+    #     if form.is_valid():
+    #         category = form.save(commit=False)
+    #         category.user = user
+    #         category.save()
+    #         messages.success(request, "Category added successfully!")
+    #         return redirect('dashboard_categories', username=username)
+    # else:
+    #     form = CategoryForm()
 
     return render(request, 'dashboard/categories.html', {
         'cat': cat,
-        'form': form,
         'profile_user': user
     })
 
-# def add_category(request):
-#     if request.method == "POST":
-#         form = CategoryForm(request.POST)
-#         if form.is_valid():
-
-
-#             form.save()
-#             messages.success(request, "Category added successfully!")
-#             return redirect('dashboard_categories') 
-#     else:
-#         form = CategoryForm()
-    
-#     return render(request, 'dashboard/add_category.html', {'form': form})
 
 @login_required
 def add_category(request, username):
@@ -194,7 +180,7 @@ def add_category(request, username):
     user = get_user_or_404(username)
     
     if request.method == "POST":
-        form = CategoryForm(request.POST)
+        form = CategoryForm(request.POST,user=user)
         if form.is_valid():
             category = form.save(commit=False)
             category.user = user
@@ -202,20 +188,13 @@ def add_category(request, username):
             messages.success(request, "Category added successfully!")
             return redirect('dashboard_categories', username=username)
     else:
-        form = CategoryForm()
+        form = CategoryForm(user=user)
     
     return render(request, 'dashboard/add_category.html', {
         'form': form,
         'profile_user': user
     })
 
-# def delete_category(request, category_id):
-#     if request.method == 'POST':
-#         category = get_object_or_404(Category, pk=category_id)
-#         category.delete()
-#         messages.success(request, "Category deleted successfully!")
-#         return redirect('dashboard_categories') 
-#     return redirect('dashboard_categories') 
 
 @login_required
 def delete_category(request, username, category_id):
@@ -230,21 +209,6 @@ def delete_category(request, username, category_id):
         messages.success(request, "Category deleted successfully!")
     return redirect('dashboard_categories', username=username)
 
-
-
-# def edit_category(request, category_id):
-#     category = get_object_or_404(Category, pk=category_id)
-
-#     if request.method == 'POST':
-#         form = CategoryForm(request.POST, instance=category)
-#         if form.is_valid():
-#             form.save() 
-#             messages.success(request, "Category updated successfully!")
-#             return redirect('dashboard_categories')  
-#     else:
-#         form = CategoryForm(instance=category)  # Pre-fill the form with existing data
-
-#     return render(request, 'dashboard/edit_category.html', {'form': form, 'category': category})
 
 @login_required
 def edit_category(request, username, category_id):
@@ -261,7 +225,7 @@ def edit_category(request, username, category_id):
             messages.success(request, "Category updated successfully!")
             return redirect('dashboard_categories', username=username)
     else:
-        form = CategoryForm(instance=category)
+        form = CategoryForm(instance=category,user=user)
 
     return render(request, 'dashboard/edit_category.html', {
         'form': form,
@@ -290,58 +254,24 @@ def dashboard_items(request, username):
     user = get_user_or_404(username)
     items = MenuItem.objects.filter(user=user)
     
-    if request.method == 'POST':
-        form = MenuItemForm(request.POST, request.FILES)
-        if form.is_valid():
-            item = form.save(commit=False)
-            item.user = user
-            item.save()
-            messages.success(request, "Item added successfully!")
-            return redirect('dashboard_items', username=username)
-    else:
-        form = MenuItemForm()
+    # if request.method == 'POST':
+    #     form = MenuItemForm(request.POST, request.FILES)
+    #     if form.is_valid():
+    #         item = form.save(commit=False)
+    #         item.user = user
+    #         item.save()
+    #         messages.success(request, "Item added successfully!")
+    #         return redirect('dashboard_items', username=username)
+    # else:
+    #     form = MenuItemForm()
 
     return render(request, 'dashboard/items.html', {
         'items': items,
-        'form': form,
+        
         'profile_user': user
     })
 
-# def add_item(request):
-#     if request.method == "POST":
-#         form = MenuItemForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, "Item added successfully!")
-#             return redirect('dashboard_items') 
-#     else:
-#         form = MenuItemForm()
-    
-#     return render(request, 'dashboard/add_item.html', {'form': form})
-
-# def delete_item(request, item_id):
-#     if request.method == 'POST':
-#         item = get_object_or_404(MenuItem, pk=item_id)
-#         item.delete()
-#         messages.success(request, "item deleted successfully!")
-#         return redirect('dashboard_items') 
-#     return redirect('dashboard_items') 
-
-
-# def edit_item(request, item_id):
-#     item = get_object_or_404(MenuItem, id=item_id)
-    
-#     if request.method == "POST":
-#         form = MenuItemForm(request.POST, request.FILES, instance=item)  # Handle image uploads
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, "Item updated successfully!")
-#             return redirect('dashboard_items')  # Redirect after saving
-#     else:
-#         form = MenuItemForm(instance=item)
-    
-#     return render(request, 'dashboard/edit_item.html', {'form': form})
-
+   
 @login_required
 def add_item(request, username):
     # Verify the requested user matches the logged-in user
