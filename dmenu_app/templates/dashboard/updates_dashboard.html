@@ -1,3 +1,142 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<style>
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h1, h2 {
+        margin-bottom: 15px;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-section {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+
+    input, textarea, select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    img.logo-preview {
+        height: 60px;
+        width: 60px;
+        object-fit: cover;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .submit-btn {
+        padding: 10px 20px;
+        background-color: #007BFF;
+        color: white;
+        font-weight: bold;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        align-self: flex-end;
+    }
+
+    .submit-btn:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<div class="container">
+    <h1>Profile Settings</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        
+        <div class="form-section">
+            <h2>Account Information</h2>
+            <div class="form-group">
+                <label>Username</label>
+                {{ user_form.username }}
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                {{ user_form.email }}
+            </div>
+        </div>
+
+        
+        <div class="form-section">
+            <h2>Restaurant Information</h2>
+            <div class="form-group">
+                <label>Restaurant Name</label>
+                {{ profile_form.restaurant_name }}
+            </div>
+            <div class="form-group">
+                <label>Logo</label>
+                {% if request.user.profile.logo %}
+                    <img src="{{ request.user.profile.logo.url }}" class="logo-preview" alt="Logo">
+                {% endif %}
+                {{ profile_form.logo }}
+            </div>
+            <div class="form-group">
+                <label>Address</label>
+                {{ profile_form.address }}
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                {{ profile_form.phone }}
+            </div>
+            <div class="form-group">
+                <label>GST Number</label>
+                {{ profile_form.gst_number }}
+            </div>
+        </div>
+
+        
+        <div class="form-section">
+            <h2>Business Preferences</h2>
+            <div class="form-group">
+                <label>Theme Color</label>
+                {{ profile_form.theme_color }}
+            </div>
+            <div class="form-group">
+                <label>Currency Symbol</label>
+                {{ profile_form.currency_symbol }}
+            </div>
+            <div class="form-group">
+                <label>Invoice Prefix</label>
+                {{ profile_form.invoice_prefix }}
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Update Profile</button>
+    </form>
+</div>
+{% endblock %}
+
+
+
 
 <!-- base.html -->
 

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ request.user.username }} - Menu Categories</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background-color: #343a40;
+            color: white;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        .category-card {
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            height: 100%;
+        }
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .category-img {
+            height: 200px;
+            object-fit: cover;
+            width: 100%;
+        }
+        .category-title {
+            padding: 1rem;
+            text-align: center;
+            background-color: white;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        .table-info {
+            background-color: #e9ecef;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>{{ request.user.profile.restaurant_name }}</h1>
+                <span class="badge bg-light text-dark fs-6">Table {{ table.number }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="table-info">
+            <h3 class="mb-0">Menu Categories</h3>
+        </div>
+
+        <div class="row">
+            {% for category in categories %}
+            <div class="col-md-4 mb-4">
+                <a href="/{{ request.user.username }}/table/{{ table.number }}/category/{{ category.id }}/" 
+                   class="text-decoration-none text-dark">
+                    <div class="category-card">
+                        {% if category.image %}
+                        <img src="{{ category.image.url }}" class="category-img" alt="{{ category.name }}">
+                        {% else %}
+                        <div class="category-img bg-secondary d-flex align-items-center justify-content-center">
+                            <span class="text-white fs-1">{{ category.name|first|upper }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="category-title">
+                            <h4 class="mb-0">{{ category.name }}</h4>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <h3>No categories available</h3>
+                <p>Please check back later</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

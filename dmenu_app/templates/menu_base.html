@@ -1,0 +1,5 @@
+{% if request.user.profile.menu_display_mode == 'category_first' %}
+    {% include 'category_grid.html' %}
+{% else %}
+    {% include 'table.html' %}
+{% endif %}

@@ -8,6 +8,42 @@ from django.dispatch import receiver
 from django.db.models import Max
 from django.contrib.auth.models import User
 
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    restaurant_name = models.CharField(max_length=100)
+    address = models.TextField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    logo = models.ImageField(upload_to='restaurant_logos/', blank=True, null=True)
+    gst_number = models.CharField(max_length=50, blank=True, null=True)
+    theme_color = models.CharField(max_length=7, default='#3b82f6')  # Default blue
+    cart_enabled = models.BooleanField(default=True)
+
+    MENU_DISPLAY_CHOICES = [
+        ('grid', 'Grid View (All items)'),
+        ('category_first', 'Category First View'),
+    ]
+    menu_display_mode = models.CharField(
+        max_length=20,
+        choices=MENU_DISPLAY_CHOICES,
+        default='grid'
+    )
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+
+# Signal to create profile when user is created
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.get_or_create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    try:
+        instance.profile.save()
+    except Profile.DoesNotExist:
+        # Create profile if it doesn't exist
+        Profile.objects.create(user=instance)
+
 class Table(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)  # Add this line
     number = models.IntegerField()
@@ -39,6 +75,8 @@ class Category(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True) 
     name = models.CharField(max_length=100, )
     sort_id=models.IntegerField(blank=True, null=True)
+    available = models.BooleanField(default=True)  # Add this field
+    image = models.ImageField(upload_to='category_images/', null=True, blank=True)
 
     class Meta:
         unique_together = ('user', 'name')  # Same name allowed for different users
@@ -84,6 +122,12 @@ class MenuItem(models.Model):
 
     class Meta:
         unique_together = ('user', 'name', 'category')
+
+    def save(self, *args, **kwargs):
+        # If category is not available, force item to be unavailable
+        if self.category and not self.category.available:
+            self.available = False
+        super().save(*args, **kwargs)
         
     def __str__(self):
         return f"{self.name} - {self.category.name}"

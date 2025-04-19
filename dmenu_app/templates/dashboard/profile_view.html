@@ -1,0 +1,171 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+
+<style>
+    .profile-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .profile-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+    .profile-header h1 {
+        font-size: 1.8rem;
+        color: #333;
+        margin: 0;
+    }
+    .edit-btn {
+        padding: 8px 16px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .profile-section {
+        margin-bottom: 2rem;
+    }
+    .profile-section h2 {
+        font-size: 1.3rem;
+        color: #444;
+        margin-bottom: 1rem;
+    }
+    .profile-row {
+        display: flex;
+        margin-bottom: 1rem;
+    }
+    .profile-label {
+        width: 200px;
+        font-weight: 600;
+        color: #555;
+    }
+    .profile-value {
+        flex: 1;
+        color: #333;
+    }
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .logo-preview {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+    }
+    .color-preview {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 10px;
+    }
+</style>
+
+<div class="profile-container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <h1>Profile Information</h1>
+            <a href="{% url 'edit_profile' username=request.user.username %}" class="edit-btn">Edit Profile</a>
+        </div>
+
+        <!-- Account Information -->
+        <div class="profile-section">
+            <h2>Account Information</h2>
+            <div class="profile-row">
+                <div class="profile-label">Username</div>
+                <div class="profile-value">{{ user.username }}</div>
+            </div>
+            <div class="profile-row">
+                <div class="profile-label">Email</div>
+                <div class="profile-value">{{ user.email }}</div>
+            </div>
+        </div>
+
+        <!-- Restaurant Information -->
+        <div class="profile-section">
+            <h2>Restaurant Information</h2>
+            <div class="profile-row">
+                <div class="profile-label">Restaurant Name</div>
+                <div class="profile-value">{{ user.profile.restaurant_name }}</div>
+            </div>
+            <div class="profile-row">
+                <div class="profile-label">Logo</div>
+                <div class="profile-value">
+                    <div class="logo-container">
+                        {% if user.profile.logo %}
+                            <img src="{{ user.profile.logo.url }}" class="logo-preview" alt="Restaurant Logo">
+                        {% else %}
+                            <div class="logo-preview" style="background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="profile-row">
+                <div class="profile-label">Address</div>
+                <div class="profile-value">{{ user.profile.address|default:"Not provided" }}</div>
+            </div>
+            <div class="profile-row">
+                <div class="profile-label">Phone</div>
+                <div class="profile-value">{{ user.profile.phone|default:"Not provided" }}</div>
+            </div>
+            <div class="profile-row">
+                <div class="profile-label">GST Number</div>
+                <div class="profile-value">{{ user.profile.gst_number|default:"Not provided" }}</div>
+            </div>
+        </div>
+
+        <!-- Business Preferences -->
+        <div class="profile-section">
+            <h2>Business Preferences</h2>
+            <div class="profile-row">
+                <div class="profile-label">Theme Color</div>
+                <div class="profile-value">
+                    <span class="color-preview" style="background-color: {{ user.profile.theme_color|default:'#3b82f6' }}"></span>
+                    {{ user.profile.theme_color|default:"#3b82f6" }}
+                </div>
+            </div>
+            <!-- <div class="profile-row">
+                <div class="profile-label">Currency Symbol</div>
+                <div class="profile-value">{{ user.profile.currency_symbol|default:"Not set" }}</div>
+            </div>
+            <div class="profile-row">
+                <div class="profile-label">Invoice Prefix</div>
+                <div class="profile-value">{{ user.profile.invoice_prefix|default:"Not set" }}</div>
+            </div> -->
+            <div class="profile-row">
+                <div class="profile-label">Cart Enabled</div>
+                <div class="profile-value">
+                    {% if user.profile.cart_enabled %}Yes{% else %}No{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

@@ -70,10 +70,12 @@ urlpatterns = [
     path('<str:username>/dashboard/items/delete/<int:item_id>/', views.delete_item, name='delete_item'),
     path('<str:username>/dashboard/items/edit/<int:item_id>/', views.edit_item, name='edit_item'),
     path('<str:username>/items/availability/<int:item_id>/', views.update_availability, name='update_availability'),
-    
+    path('<username>/categories/<int:category_id>/toggle/', views.toggle_category_availability, name='toggle_category_availability'),
 
     path('<str:username>/tables/add/', views.add_table, name='add_table'),
 
+    path('<username>/toggle_cart/', views.toggle_cart_status, name='toggle_cart_status'),
+    # path('<str:username>/dashboard/profile/', views.profile, name='profile'),
     path('<str:username>/dashboard/orders/', views.dashboard_orders, name='dashboard_orders'),
     path('<str:username>/table/<int:table_id>/pending-orders/', views.table_pending_orders, name='table_pending_orders'),
     path('<str:username>/orders/<int:order_id>/update-status/', views.update_order_status, name='update_order_status'),
@@ -90,6 +92,17 @@ urlpatterns = [
     path('test-email/', views.test_email, name='test_email'),
     path('api/check-unbilled-orders/', views.check_unbilled_orders, name='check_unbilled_orders'),
     # path('reports/sales/', views.daily_sales_report, name='sales_report'),
+    path('<str:username>/dashboard/profile/', views.view_profile, name='view_profile'),
+    path('<str:username>/dashboard/profile/edit/', views.edit_profile, name='edit_profile'),
+    #  path('update-payment-method/', views.update_payment_method, name='update_payment_method'),
+
+
+
+    path('<str:username>/table/<int:table_number>/categories/', views.category_grid, name='category_grid'),
+    path('<str:username>/table/<int:table_number>/category/<int:category_id>/', views.category_items, name='category_items'),
+    path('dashboard/menu-settings/', views.menu_display_settings, name='menu_display_settings'),
+
+
 
 ]
 

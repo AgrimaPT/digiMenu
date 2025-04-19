@@ -473,12 +473,25 @@ h5.text-center {
             </span>
         </div>
         <!-- Floating Cart Button -->
-        <a class="btn cart-button position-fixed" 
+        {% if cart_enabled %}
+            <!-- Show normal cart button -->
+            <a class="btn cart-button position-fixed" 
             data-bs-toggle="offcanvas" href="#offcanvasExample" 
             role="button" aria-controls="offcanvasExample">
                 <i class="fas fa-shopping-cart fa-lg"></i>
                 <span id="cart-icon-count" class="badge bg-danger position-absolute">0</span>
-        </a>
+            </a>
+            {% else %}
+            
+            <div class="position-fixed cart-disabled-message" style="bottom: 20px; right: 20px;">
+                <div class="alert alert-warning p-2 d-flex align-items-center">
+                    <i class="fas fa-ban me-2"></i>
+                    <span>Ordering is currently disabled</span>
+                </div>
+            </div>
+        {% endif %}
+        
+        
 
 
         <!-- Cart Sidebar -->
@@ -531,12 +544,14 @@ h5.text-center {
                             <div class="price-tag">
                                 <span class="price-badge">₹{{ item.price }}</span>
                             </div>
+                            {% if cart_enabled %}
                             <!-- <p class="card-text">₹{{ item.price }}</p> -->
                             <button type="button" class="btn btn-primary"
                                 id="add-to-cart-{{ item.id }}" 
                                 onclick="addToCart('{{ item.id }}', '{{ item.name }}', '{{ item.price }}');">
                                 Add to Cart
                             </button>
+                            {% endif %}
             
                             <div class="quantity-controls mt-2 d-none" id="quantity-controls-{{ item.id }}">
                                 <button onclick="updateQuantity('{{ item.id }}', -1)">-</button>
@@ -548,8 +563,6 @@ h5.text-center {
                     <h5 class="text-center mt-2">{{ item.name }}</h5>
                 </div>
             
-                <!-- Item Name Below Card -->
-                
             </div>
             
             
@@ -562,6 +575,44 @@ h5.text-center {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <script>
+    function filterCategory(category) {
+        let menuItems = document.querySelectorAll(".menu-item");
+
+        menuItems.forEach(item => {
+            let itemCategory = item.getAttribute("data-category");
+            if (category === "all" || itemCategory === category) {
+                item.style.display = "block";
+            } else {
+                item.style.display = "none";
+            }
+        });
+
+        // Remove active class from all category buttons
+        document.querySelectorAll(".category-btn").forEach(btn => {
+            btn.classList.remove("active");
+        });
+
+        // Add active class to the clicked button
+        event.target.classList.add("active");
+    }
+
+    // Ensure the function is accessible globally
+    window.filterCategory = filterCategory;
+
+// Hide all add-to-cart buttons if cart is disabled
+    // {% if not cart_enabled %}
+    //     document.addEventListener("DOMContentLoaded", function() {
+    //         document.querySelectorAll('[id^="add-to-cart-"]').forEach(button => {
+    //             button.style.display = 'none';
+    //         });
+            
+    //         // Also hide quantity controls if they exist
+    //         document.querySelectorAll('[id^="quantity-controls-"]').forEach(controls => {
+    //             controls.style.display = 'none';
+    //         });
+    //     });
+    // {% endif %}
+
     document.addEventListener("DOMContentLoaded", function () {
     const username = "{{ restaurant.username }}";
     //const tableId = "{{ table.id }}"; // Get table ID from Django template
@@ -741,31 +792,7 @@ h5.text-center {
     updateCartUI();
     updateMenuUI();
 
-    function filterCategory(category) {
-    let menuItems = document.querySelectorAll(".menu-item");
-
-    menuItems.forEach(item => {
-        let itemCategory = item.getAttribute("data-category");
-        if (category === "all" || itemCategory === category) {
-            item.style.display = "block";
-        } else {
-            item.style.display = "none";
-        }
-    });
-
-    // Remove active class from all category buttons
-    document.querySelectorAll(".category-btn").forEach(btn => {
-        btn.classList.remove("active");
-    });
-
-    // Add active class to the clicked button
-    event.target.classList.add("active");
-}
-
-// Ensure the function is accessible globally
-window.filterCategory = filterCategory;
-
-
+    
     const cartOffcanvas = document.getElementById("offcanvasExample");
     let isCartOpen = false;
 
@@ -806,6 +833,8 @@ window.filterCategory = filterCategory;
 
     // Ensure initial state is set when page loads
     history.replaceState({ menuOpen: true }, "", location.pathname);
+
+    
 
 });
 

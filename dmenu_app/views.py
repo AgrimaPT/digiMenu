@@ -1,7 +1,7 @@
 # Create your views here.
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Table, MenuItem, Order, OrderItem,Category
-from .forms import CustomerDetailsForm,CategoryForm, MenuItemForm
+from .forms import CustomerDetailsForm,CategoryForm, MenuItemForm,Profile
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.http import JsonResponse
@@ -26,6 +26,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
 from .models import OrderItem
+from .forms import UserUpdateForm, ProfileUpdateForm
 
 
 
@@ -58,15 +59,24 @@ def table_view(request, username, table_number):
     # Verify table belongs to the user
     table = get_object_or_404(Table, number=table_number, user__username=username)
     
-    menu_items = MenuItem.objects.filter(available=True, user=table.user)
+    restaurant_profile = get_object_or_404(Profile, user=table.user)
+
+    # menu_items = MenuItem.objects.filter(available=True, user=table.user)
     
-    categories = Category.objects.filter(user=table.user).annotate(
+    categories = Category.objects.filter(user=table.user,available=True).annotate(
         effective_sort_id=Case(
             When(sort_id__isnull=True, then=Value(999999)),
             default=F('sort_id'),
             #output_field=models.IntegerField()
         )
     ).order_by('effective_sort_id')
+
+    menu_items = MenuItem.objects.filter(
+        available=True,
+        user=table.user,
+        category__available=True  # Only items from available categories
+        
+    )
     
     # if request.method == "POST":
     #     order = Order.objects.create(table=table, user=request.user)
@@ -86,7 +96,8 @@ def table_view(request, username, table_number):
         'table': table,
         'menu_items': menu_items,
         'categories': categories,
-        'restaurant': table.user
+        'restaurant': table.user,
+        'cart_enabled': restaurant_profile.cart_enabled 
     })
 
 
@@ -232,6 +243,25 @@ def edit_category(request, username, category_id):
         'category': category,
         'profile_user': user
     })
+
+# views.py
+from django.views.decorators.http import require_POST
+
+@require_POST
+@login_required
+def toggle_category_availability(request, username, category_id):
+    if request.user.username != username:
+        return redirect('login')
+    
+    category = get_object_or_404(Category, id=category_id, user=request.user)
+    category.available = not category.available
+    category.save()
+    
+    # Update all items in this category
+    MenuItem.objects.filter(category=category).update(available=category.available)
+    
+    messages.success(request, f"Category '{category.name}' is now {'available' if category.available else 'unavailable'}")
+    return redirect('dashboard_categories', username=username)
     
 
 # def dashboard_items(request):
@@ -1434,16 +1464,35 @@ def billed_orders(request, table_number):
             filter_date = date.today()
     else:
         filter_date = date.today()
+
+    # Payment method filter
+    payment_method = request.GET.get('payment_method')
+
     
     # Base queryset with date filtering and user restriction
+    # billed_orders = Order.objects.filter(
+    #     table=table,
+    #     billed=True,
+    #     updated_at__date=filter_date,
+    #     user=request.user  # Ensure orders belong to current user
+    # ).prefetch_related(
+    #     Prefetch('items', queryset=OrderItem.objects.select_related('menu_item'))
+    # ).order_by('-updated_at')
+
     billed_orders = Order.objects.filter(
         table=table,
         billed=True,
         updated_at__date=filter_date,
-        user=request.user  # Ensure orders belong to current user
-    ).prefetch_related(
+        user=request.user
+    )
+
+    if payment_method:  # Apply only if user selected a filter
+        billed_orders = billed_orders.filter(payment_method=payment_method)
+
+    billed_orders = billed_orders.prefetch_related(
         Prefetch('items', queryset=OrderItem.objects.select_related('menu_item'))
     ).order_by('-updated_at')
+
 
     individual_orders = []
     combined_orders_dict = {}
@@ -1740,148 +1789,9 @@ from django.core.cache import cache
 from collections import defaultdict
 from django.db.models.functions import Coalesce
 import colorsys
-# @never_cache
-# @login_required
-# def dashboard_home(request, username):
-#     if request.user.username != username:
-#         return redirect('login')
-    
-#     # Get date filter from request
-#     filter_date = get_date_filter(request)
-    
-#     # Check cache first
-#     cache_key = f'dashboard_{username}_{filter_date}'
-#     cached_data = cache.get(cache_key)
-    
-#     if cached_data:
-#         return render(request, 'dashboard/home.html', cached_data)
-    
-#     # Date ranges
-#     today = timezone.localdate() 
-#     date_range, previous_date_range = get_date_ranges(filter_date)
-    
-#     # Get all orders for the selected period
-#     orders = Order.objects.filter(
-#         user=request.user,
-#         created_at__date__in=date_range,
-#         billed=True
-#     ).select_related('table')
-    
-#     # Get previous period orders for comparison
-#     previous_orders = Order.objects.filter(
-#         user=request.user,
-#         created_at__date__in=previous_date_range,
-#         billed=True
-#     )
-    
-#     # 1. Calculate key metrics
-#     today_sales = orders.aggregate(total=Sum('final_total'))['total'] or 0
-#     previous_sales = previous_orders.aggregate(total=Sum('final_total'))['total'] or 0
-    
-#     growth_rate = 0
-#     if previous_sales > 0:
-#         growth_rate = ((today_sales - previous_sales) / previous_sales) * 100
-    
-#     # 2. Order statistics
-#     total_orders = orders.count()
-#     completed_orders = orders.filter(status='Completed').count()
-    
-#     avg_order_value = 0
-#     if total_orders > 0:
-#         avg_order_value = today_sales / total_orders
-    
-#     # 3. Top selling items
-#     top_items = OrderItem.objects.filter(
-#     order__in=orders
-# ).values(
-#     'menu_item__name'
-# ).annotate(
-#     total_quantity=Sum('quantity'),
-#     total_revenue=Sum(F('quantity') * F('price'))
-# ).order_by('-total_quantity')[:10]  # Now sorting by quantity sold
 
-#     # Calculate percentage of total sales for each item
-#     if today_sales > 0:
-#         for item in top_items:
-#             item['percentage'] = (item['total_revenue'] / today_sales) * 100
-    
-#     top_item = top_items.first() if top_items.exists() else None
-    
-#     # 4. Table performance
-#     table_performance = orders.values(
-#         'table__number'
-#     ).annotate(
-#         order_count=Count('id'),
-#         total_revenue=Sum('final_total'),
-#         avg_value=ExpressionWrapper(
-#             F('total_revenue') / F('order_count'),
-#             output_field=DecimalField()
-#         )
-#     ).order_by('-total_revenue')
-    
-#     # 5. Sales trend data
-#     daily_sales = orders.values(
-#         'created_at__date'
-#     ).annotate(
-#         daily_total=Sum('final_total')
-#     ).order_by('created_at__date')
-    
-#     # Fill in missing dates with zero
-#     sales_dict = {sale['created_at__date']: float(sale['daily_total']) for sale in daily_sales}
-#     sales_data = [sales_dict.get(date, 0) for date in date_range]
-#     sales_labels = [date.strftime('%a %d') for date in date_range]
-    
-#     # 6. Category sales data
-#     category_sales = OrderItem.objects.filter(
-#         order__in=orders
-#     ).values(
-#         'menu_item__category__name'
-#     ).annotate(
-#         category_total=Sum(F('quantity') * F('price'))
-#     ).order_by('-category_total')
-    
-#     # Generate distinct colors for categories
-#     category_colors = generate_colors(category_sales.count())
-#     for i, category in enumerate(category_sales):
-#         category['color'] = category_colors[i]
-    
-#     category_labels = [item['menu_item__category__name'] for item in category_sales]
-#     category_data = [float(item['category_total']) for item in category_sales]
-    
-#     # Calculate average items per order
-#     total_items = OrderItem.objects.filter(
-#         order__in=orders
-#     ).aggregate(total=Sum('quantity'))['total'] or 0
-#     avg_items_per_order = total_items / total_orders if total_orders > 0 else 0
-    
-#     context = {
-#         'today': today,
-#         'today_sales': today_sales,
-#         'growth_rate': round(growth_rate, 2),
-#         'total_orders': total_orders,
-#         'completed_orders': completed_orders,
-#         'avg_order_value': round(avg_order_value, 2),
-#         'avg_items_per_order': round(avg_items_per_order, 1),
-#         'top_items': top_items,
-#         'top_item': top_item,
-#         'table_performance': table_performance,
-#         'sales_labels': sales_labels,
-#         'sales_data': sales_data,
-#         'category_sales': category_sales,
-#         'category_labels': category_labels,
-#         'category_data': category_data,
-#         'selected_date': filter_date,
-#     }
-    
-#     # Cache for 1 hour
-#     # cache.set(cache_key, context, timeout=3600)
 
-#     # if filter_date != timezone.localdate():
-#     #     cache.set(cache_key, context, timeout=3600)
 
-    
-#     return render(request, 'dashboard/home.html', context)
-    
 from django.shortcuts import render, redirect
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
@@ -2206,3 +2116,185 @@ def check_unbilled_orders(request):
     ).exists()
     
     return JsonResponse({'has_unbilled_orders': has_unbilled})
+
+
+@login_required
+def profile(request, username):
+    if request.user.username != username:
+        messages.error(request, "You can only view your own profile")
+        return redirect('profile', username=request.user.username)
+    
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        profile_form = ProfileUpdateForm(
+            request.POST, 
+            request.FILES, 
+            instance=request.user.profile
+        )
+        
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Your profile has been updated!')
+            return redirect('profile', username=username)
+    else:
+        user_form = UserUpdateForm(instance=request.user)
+        profile_form = ProfileUpdateForm(instance=request.user.profile)
+
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'current_user': request.user
+    }
+
+    return render(request, 'dashboard/profile.html', context)
+
+@login_required
+@require_POST
+def toggle_cart_status(request, username):
+    if request.user.username != username:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    profile = get_object_or_404(Profile, user=request.user)
+    
+    # Toggle the cart_enabled status
+    profile.cart_enabled = not profile.cart_enabled
+    profile.save()
+    
+    # Optionally update all tables for this user
+    # Table.objects.filter(user=request.user).update(cart_enabled=profile.cart_enabled)
+    
+    return JsonResponse({
+        'status': 'success',
+        'cart_enabled': profile.cart_enabled,
+    })
+
+@login_required
+def view_profile(request, username):
+    user = get_object_or_404(User, username=username)
+    # Ensure users can only view their own profile
+    if request.user != user:
+        return redirect('view_profile', username=request.user.username)
+    return render(request, 'dashboard/profile_view.html', {'profile_user': user})
+
+@login_required
+def edit_profile(request, username):
+    user = get_object_or_404(User, username=username)
+    # Ensure users can only edit their own profile
+    if request.user != user:
+        return redirect('edit_profile', username=request.user.username)
+    
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=user)
+        profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=user.profile)
+        
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            return redirect('view_profile', username=user.username)
+    else:
+        user_form = UserUpdateForm(instance=user)
+        profile_form = ProfileUpdateForm(instance=user.profile)
+    
+    return render(request, 'dashboard/profile_edit.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'profile_user': user
+    })
+
+# @csrf_exempt
+# def update_payment_method(request):
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             order_id = data.get('order_id')
+#             payment_method = data.get('payment_method')
+            
+#             order = Order.objects.get(id=order_id)
+#             order.payment_method = payment_method
+#             order.save()
+            
+#             return JsonResponse({'success': True})
+#         except Order.DoesNotExist:
+#             return JsonResponse({'success': False, 'error': 'Order not found'})
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'error': str(e)})
+#     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+from django.shortcuts import get_object_or_404
+
+def category_grid(request, username, table_number):
+    table = get_object_or_404(Table, number=table_number, user__username=username)
+    categories = Category.objects.filter(user=request.user, available=True).annotate(
+        effective_sort_id=Case(
+            When(sort_id__isnull=True, then=Value(999999)),
+            default=F('sort_id'),
+        )
+    ).order_by('effective_sort_id')
+    
+    return render(request, 'category_grid.html', {
+        'categories': categories,
+        'table': table,
+    })
+
+def category_items(request, username, table_number, category_id):
+    
+
+    table = get_object_or_404(Table, number=table_number, user__username=username)
+    category = get_object_or_404(Category, id=category_id, user=request.user)
+    items = MenuItem.objects.filter(category=category, available=True, user=request.user)
+    
+
+    restaurant_profile = get_object_or_404(Profile, user=table.user)
+    return render(request, 'category_items.html', {
+        'category': category,
+        'items': items,
+        'table': table,
+        'cart_enabled': restaurant_profile.cart_enabled 
+    })
+
+
+# def table_view(request, username, table_number):
+#     # Verify table belongs to the user
+#     table = get_object_or_404(Table, number=table_number, user__username=username)
+    
+#     restaurant_profile = get_object_or_404(Profile, user=table.user)
+
+#     # menu_items = MenuItem.objects.filter(available=True, user=table.user)
+    
+#     categories = Category.objects.filter(user=table.user,available=True).annotate(
+#         effective_sort_id=Case(
+#             When(sort_id__isnull=True, then=Value(999999)),
+#             default=F('sort_id'),
+#             #output_field=models.IntegerField()
+#         )
+#     ).order_by('effective_sort_id')
+
+#     menu_items = MenuItem.objects.filter(
+#         available=True,
+#         user=table.user,
+#         category__available=True  # Only items from available categories
+        
+#     )
+    
+#     return render(request, 'table.html', {
+#         'table': table,
+#         'menu_items': menu_items,
+#         'categories': categories,
+#         'restaurant': table.user,
+#         'cart_enabled': restaurant_profile.cart_enabled 
+#     })
+
+@login_required
+def menu_display_settings(request):
+    profile = request.user.profile
+    if request.method == 'POST':
+        profile.menu_display_mode = request.POST.get('menu_display_mode', 'grid')
+        profile.category_display_style = request.POST.get('category_display_style', 'buttons')
+        profile.save()
+        return redirect('dashboard')
+    return render(request, 'dashboard/menu_display_settings.html', {
+        'profile': profile
+    })

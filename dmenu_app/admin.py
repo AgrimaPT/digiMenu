@@ -1,8 +1,12 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+
 
 # Register your models here.
 
-from .models import Table, MenuItem, Order, OrderItem, Category
+from .models import Table, MenuItem, Order, OrderItem, Category,Profile
 
 @admin.register(Table)
 class TableAdmin(admin.ModelAdmin):
@@ -24,3 +28,8 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ('order', 'menu_item', 'quantity')
+
+@admin.register(Profile)
+class Profile(admin.ModelAdmin):
+    list_display = ('user',)
+

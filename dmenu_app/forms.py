@@ -1,5 +1,5 @@
 from django import forms
-from .models import Category, MenuItem
+from .models import Category, MenuItem, Profile
 from django.utils.safestring import mark_safe
 from django.db.models import Max
 from django.contrib.auth.forms import PasswordResetForm
@@ -128,3 +128,27 @@ class MenuItemForm(forms.ModelForm):
 #         widget=forms.EmailInput(attrs={'autocomplete': 'email'})
 #     )
 
+class UserUpdateForm(forms.ModelForm):
+    email = forms.EmailField()
+
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = [
+            'restaurant_name', 
+            'address', 
+            'phone', 
+            'logo', 
+            'gst_number',
+            'theme_color',
+            'cart_enabled',
+            'menu_display_mode'
+            
+        ]
+        widgets = {
+            'theme_color': forms.TextInput(attrs={'type': 'color'}),
+        }

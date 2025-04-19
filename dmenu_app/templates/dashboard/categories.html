@@ -13,7 +13,7 @@
     .categories-container {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 120px); /* Adjust based on your header height */
+        height: calc(100vh - 120px);
         overflow: hidden;
         padding: 20px;
     }
@@ -48,13 +48,13 @@
     .table-wrapper {
         flex: 1;
         overflow-y: auto;
-        overflow-x: hidden;
+        overflow-x: auto; /* Changed to auto for horizontal scrolling */
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
-        table-layout: fixed; /* Ensures columns don't overflow */
+        min-width: 600px; /* Ensures table doesn't get too narrow */
     }
 
     th, td {
@@ -62,6 +62,7 @@
         text-align: left;
         border-bottom: 1px solid #e0e0e0;
         vertical-align: middle;
+        white-space: nowrap; /* Prevents text wrapping */
     }
 
     thead th {
@@ -77,9 +78,17 @@
     }
 
     /* Column Widths */
-    th:nth-child(1), td:nth-child(1) { width: 15%; } /* Sort ID */
-    th:nth-child(2), td:nth-child(2) { width: 65%; } /* Category Name */
-    th:nth-child(3), td:nth-child(3) { width: 20%; } /* Actions */
+    th:nth-child(1), td:nth-child(1) { width: 10%; } /* Sort ID */
+    th:nth-child(2), td:nth-child(2) { width: 50%; } /* Category Name */
+    th:nth-child(3), td:nth-child(3) { width: 15%; } /* Availability */
+    th:nth-child(4), td:nth-child(4) { width: 25%; } /* Actions */
+
+    /* Checkbox Styling */
+    .availability-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
 
     /* Button Styling */
     .btn {
@@ -152,10 +161,16 @@
         h1 {
             font-size: 24px;
         }
+        th, td {
+            padding: 8px 6px;
+            font-size: 13px;
+        }
         
-        th:nth-child(1), td:nth-child(1) { width: 20%; }
-        th:nth-child(2), td:nth-child(2) { width: 60%; }
-        th:nth-child(3), td:nth-child(3) { width: 20%; }
+        /* Further reduce column widths */
+        th:nth-child(1), td:nth-child(1) { width: 12%; }
+        th:nth-child(2), td:nth-child(2) { width: 38%; }
+        th:nth-child(3), td:nth-child(3) { width: 15%; }
+        th:nth-child(4), td:nth-child(4) { width: 35%; }
     }
 
     @media (max-width: 576px) {
@@ -163,27 +178,9 @@
             padding: 10px;
         }
         
-        th, td {
-            padding: 8px 10px;
-            font-size: 14px;
-        }
-        
         .btn {
             padding: 6px 8px;
             font-size: 13px;
-        }
-        
-        th:nth-child(1), td:nth-child(1) { width: 25%; }
-        th:nth-child(2), td:nth-child(2) { width: 50%; }
-        th:nth-child(3), td:nth-child(3) { width: 25%; }
-        
-        .action-buttons {
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .btn {
-            width: 100%;
         }
     }
 </style>
@@ -197,15 +194,14 @@
     </div>
     <p>Total categories: {{ cat|length }}</p>
     <div class="table-container">
-        
-
         <div class="table-wrapper">
             {% if cat %}
             <table>
                 <thead>
                     <tr>
                         <th>Sort ID</th>
-                        <th>Category Name</th>
+                        <th>Category</th>
+                        <th>Available</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -214,6 +210,15 @@
                     <tr>
                         <td>{{ c.sort_id }}</td>
                         <td>{{ c.name }}</td>
+                        <td>
+                            <form method="POST" action="{% url 'toggle_category_availability' request.user.username c.id %}" class="availability-form">
+                                {% csrf_token %}
+                                <input type="checkbox" 
+                                       class="availability-checkbox" 
+                                       {% if c.available %}checked{% endif %}
+                                       onchange="this.form.submit()">
+                            </form>
+                        </td>
                         <td>
                             <div class="action-buttons">
                                 <a href="{% url 'edit_category' request.user.username c.id %}" class="btn btn-primary btn-sm">
@@ -228,7 +233,6 @@
                             </div>
                         </td>
                     </tr>
-                
                     {% endfor %}
                 </tbody>
             </table>
@@ -253,20 +257,24 @@
         }
     }
 
-    // Adjust table container height on resize
-    window.addEventListener('resize', function() {
+    // Auto-submit when checkbox changes
+    document.querySelectorAll('.availability-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+
+    // Adjust table container height
+    function adjustTableHeight() {
         const container = document.querySelector('.table-wrapper');
         if (container) {
             const headerHeight = document.querySelector('.page-header').offsetHeight;
-            const viewportHeight = window.innerHeight;
-            container.style.maxHeight = (viewportHeight - headerHeight - 60) + 'px';
+            container.style.maxHeight = `calc(100vh - ${headerHeight + 120}px)`;
         }
-    });
+    }
 
-    // Initialize height on load
-    document.addEventListener('DOMContentLoaded', function() {
-        window.dispatchEvent(new Event('resize'));
-    });
+    window.addEventListener('resize', adjustTableHeight);
+    document.addEventListener('DOMContentLoaded', adjustTableHeight);
 </script>
 
 {% endblock %}
