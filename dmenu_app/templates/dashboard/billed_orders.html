@@ -76,7 +76,7 @@
                         <th style="width: 12%">Order ID</th>
                         <th style="width: 20%">Customer</th>
                         <th style="width: 20%" class="text-right">Amount</th>
-                        <th style="width: 20%">Payment Method</th>
+                        <th style="width: 20%">Payment Methods</th>
                         <th style="width: 20%">Time</th>
                     </tr>
                 </thead>
@@ -84,95 +84,90 @@
                     {% if final_order_list %}
                         {% for entry in final_order_list %}
                             {% if entry.type == "single" %}
-                                <tr class="main-order">
+                                <!-- Single order row -->
+                                <tr class="main-order" >
                                     <td>{{ entry.number }}</td>
                                     <td>{{ entry.order.user_order_id }}</td>
                                     <td>{{ entry.order.customer_name|default:"Guest" }}</td>
                                     <td class="text-right">₹{{ entry.total_amount|floatformat:2 }}</td>
                                     <td>
-                                        {% if entry.order.payment_method == 'pending' %}
+                                        {% if entry.order.payment_methods %}
+                                            {% for method in entry.order.payment_methods %}
+                                                <span class="payment-badge {{ method }}">
+                                                    {{ method|title }}
+                                                </span>
+                                            {% endfor %}
+                                        {% else %}
                                             <a href="#" class="payment-method-link" data-order-id="{{ entry.order.id }}">
                                                 <span class="payment-badge pending">
-                                                    {{ entry.order.get_payment_method_display }}
+                                                    Pending
                                                 </span>
                                             </a>
-                                        {% else %}
-                                            <span class="payment-badge 
-                                                {% if entry.order.payment_method == 'cash' %}cash
-                                                {% elif entry.order.payment_method == 'gpay' %}gpay
-                                                {% elif entry.order.payment_method == 'card' %}card
-                                                {% endif %}">
-                                                {{ entry.order.get_payment_method_display }}
-                                            </span>
                                         {% endif %}
                                     </td>
+                                    
                                     <td>{{ entry.order.updated_at|date:"h:i A" }}</td>
                                 </tr>
-                            {% elif entry.type == "combined" %}
-                                <tr class="main-order">
-                                    <td>{{ entry.number }}</td>
-                                    <td colspan="2">
-                                        <strong>({{ entry.orders|length }})</strong>
-                                    </td>
-                                    <td class="text-right"><strong>₹{{ entry.total_amount|floatformat:2 }}</strong></td>
-                                    <td>
-                                        <span class="payment-badge combined">
-                                            Combined
-                                        </span>
-                                    </td>
-                                    <td>{{ entry.updated_at|date:"h:i A" }}</td>
-                                </tr>
-                                
-                                {% for order in entry.orders %}
-                                    <tr class="table-sm">
-                                        <td></td>
-                                        <td>{{ order.user_order_id}}</td>
-                                        <td>{{ order.customer_name|default:"Guest" }}</td>
-                                        <td class="text-right">₹{{ order.final_total|floatformat:2 }}</td>
-                                        <td>
-                                            {% if order.payment_method == 'pending' %}
-                                                <a href="#" class="payment-method-link" data-order-id="{{ order.id }}">
-                                                    <span class="payment-badge pending">
-                                                        {{ order.get_payment_method_display }}
-                                                    </span>
-                                                </a>
-                                            {% else %}
-                                                <span class="payment-badge 
-                                                    {% if order.payment_method == 'cash' %}cash
-                                                    {% elif order.payment_method == 'gpay' %}gpay
-                                                    {% elif order.payment_method == 'card' %}card
-                                                    {% endif %}">
-                                                    {{ order.get_payment_method_display }}
-                                                </span>
-                                            {% endif %}
+                            {% else %}
+                                {% if entry.type == "combined" %}
+                                    <!-- Combined order header row -->
+                                    <tr class="main-order" >
+                                        <td>{{ entry.number }}</td>
+                                        <td colspan="2">
+                                            <strong>({{ entry.orders|length }})</strong>
                                         </td>
-                                        <td>{{ order.updated_at|date:"h:i A" }}</td>
+                                        <td class="text-right"><strong>₹{{ entry.total_amount|floatformat:2 }}</strong></td>
+                                        <td>
+                                            <a href="#" class="payment-method-link" data-combined-id="{{ entry.combined_id }}">
+                                                <span class="payment-badge combined">
+                                                    {% if entry.has_pending_payments %}Pending{% else %}Combined{% endif %}
+                                                </span>
+                                            </a>
+                                        </td>
+                                        <td>{{ entry.updated_at|date:"h:i A" }}</td>
                                     </tr>
-                                {% endfor %}
+                                    
+                                    <!-- Individual orders in combined bill -->
+                                    {% for order in entry.orders %}
+                                        <tr class="table-sm" ></tr>>
+                                            <td></td>
+                                            <td>{{ order.user_order_id}}</td>
+                                            <td>{{ order.customer_name|default:"Guest" }}</td>
+                                            <td class="text-right">₹{{ order.final_total|floatformat:2 }}</td>
+                                            <td>
+                                                {% if order.payment_methods %}
+                                                    {% for method in order.payment_methods %}
+                                                        <span class="payment-badge {{ method }}">
+                                                            {{ method|title }}
+                                                        </span>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="payment-badge pending">
+                                                        Pending
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            
+                                            <td>{{ order.updated_at|date:"h:i A" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
                             {% endif %}
                         {% endfor %}
                     {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4">
-                            <div class="alert alert-info mb-0">
-                                <i class="fas fa-info-circle mr-2"></i>
-                                No billed orders found for {{ selected_date|date:"d M Y" }}
-                                {% if request.GET.payment_method %}
-                                    with payment method "<strong>{{ request.GET.payment_method|title }}</strong>"
-                                {% endif %}
-                                {% if selected_date == today %}yet{% endif %}.
-                            </div>
-                        </td>
-                    </tr>
-                        <!-- <tr>
-                            <td colspan="7" class="text-center py-4">
+                        <!-- No orders message -->
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
                                 <div class="alert alert-info mb-0">
                                     <i class="fas fa-info-circle mr-2"></i>
                                     No billed orders found for {{ selected_date|date:"d M Y" }}
-                                    {% if selected_date == today %}yet{% endif %}
+                                    {% if request.GET.payment_method %}
+                                        with payment method "<strong>{{ request.GET.payment_method|title }}</strong>"
+                                    {% endif %}
+                                    {% if selected_date == today %}yet{% endif %}.
                                 </div>
                             </td>
-                        </tr> -->
+                        </tr>
                     {% endif %}
                 </tbody>
             </table>
@@ -180,39 +175,64 @@
     </div>
 </div>
 
-
 <!-- Payment Method Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-warning text-white">
-                <h5 class="modal-title" id="paymentModalLabel">Update Payment Method</h5>
+                <h5 class="modal-title" id="paymentModalLabel">Update Payment Methods</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="paymentOrderId">
-                <div class="list-group">
-                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center payment-option" data-method="cash">
-                        <span><i class="fas fa-money-bill-wave mr-2"></i> Cash</span>
-                        <span class="badge bg-success">Cash</span>
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center payment-option" data-method="gpay">
-                        <span><i class="fab fa-google-pay mr-2"></i> GPay</span>
-                        <span class="badge bg-primary">GPay</span>
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center payment-option" data-method="card">
-                        <span><i class="far fa-credit-card mr-2"></i> Credit Card</span>
-                        <span class="badge bg-info">Card</span>
-                    </a>
+                <input type="hidden" id="isCombinedOrder">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6>Select Payment Methods:</h6>
+                            <div class="form-check">
+                                <input class="form-check-input payment-method-checkbox" type="checkbox" id="cashCheckbox" value="cash">
+                                <label class="form-check-label" for="cashCheckbox">
+                                    <i class="fas fa-money-bill-wave mr-2"></i> Cash
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input payment-method-checkbox" type="checkbox" id="gpayCheckbox" value="gpay">
+                                <label class="form-check-label" for="gpayCheckbox">
+                                    <i class="fab fa-google-pay mr-2"></i> GPay
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input payment-method-checkbox" type="checkbox" id="cardCheckbox" value="card">
+                                <label class="form-check-label" for="cardCheckbox">
+                                    <i class="far fa-credit-card mr-2"></i> Credit Card
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6>Payment Amounts:</h6>
+                            <div id="amountInputsContainer">
+                                
+                            </div>
+                            <div class="mt-2">
+                                <strong>Order Total: <span id="orderTotalDisplay">₹0.00</span></strong>
+                            </div>
+                            <div class="mt-1">
+                                <strong>Remaining: <span id="remainingAmountDisplay">₹0.00</span></strong>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="savePaymentMethods">Save Payment Methods</button>
             </div>
         </div>
     </div>
 </div>
-
 
 <style>
     .main-order {
@@ -233,6 +253,8 @@
         white-space: nowrap;
         vertical-align: baseline;
         border-radius: 10rem;
+        margin-right: 0.3em;
+        margin-bottom: 0.3em;
     }
     
     .payment-badge.cash {
@@ -261,21 +283,6 @@
         color: white;
     }
     
-    .badge-cash {
-        background-color: #28a745;
-        color: white;
-    }
-    
-    .badge-gpay {
-        background-color: #007bff;
-        color: white;
-    }
-    
-    .badge-card {
-        background-color: #17a2b8;
-        color: white;
-    }
-    
     .payment-method-link {
         text-decoration: none;
     }
@@ -283,62 +290,227 @@
     .payment-method-link:hover .payment-badge.pending {
         background-color: #e0a800;
     }
+    
+    .payment-method-link:hover .payment-badge.combined {
+        background-color: #5a6268;
+    }
+    
+    .amount-input-group {
+        margin-bottom: 10px;
+    }
+    
+    .amount-input-group .input-group-text {
+        min-width: 80px;
+    }
+    
+    #remainingAmountDisplay {
+        color: #dc3545;
+    }
+
+    .payment-method-with-amount {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.payment-amount {
+    margin-left: 8px;
+    font-size: 0.85em;
+    color: #555;
+}
+
+.combined-payment-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.payment-methods-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
 </style>
 
 <script>
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Bootstrap modal
     const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    let currentOrderId = null;
+    let isCombinedOrder = false;
+    let orderTotalAmount = 0;
     
     // Handle payment method link clicks
     document.querySelectorAll('.payment-method-link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            const orderId = this.getAttribute('data-order-id');
-            document.getElementById('paymentOrderId').value = orderId;
-            paymentModal.show();
+            currentOrderId = this.getAttribute('data-order-id') || this.getAttribute('data-combined-id');
+            isCombinedOrder = !!this.getAttribute('data-combined-id');
+            
+            document.getElementById('paymentOrderId').value = currentOrderId;
+            document.getElementById('isCombinedOrder').value = isCombinedOrder;
+            
+            // Reset checkboxes and amounts
+            document.querySelectorAll('.payment-method-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('amountInputsContainer').innerHTML = '';
+            
+            // Fetch order details
+            fetch(`/get-order-details/${currentOrderId}/?combined=${isCombinedOrder}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        orderTotalAmount = parseFloat(data.total_amount);
+                        document.getElementById('orderTotalDisplay').textContent = `₹${orderTotalAmount.toFixed(2)}`;
+                        document.getElementById('remainingAmountDisplay').textContent = `₹${orderTotalAmount.toFixed(2)}`;
+                        
+                        // Pre-select existing methods if any
+                        if (data.payment_methods && data.payment_methods.length > 0) {
+                            data.payment_methods.forEach(method => {
+                                const checkbox = document.querySelector(`.payment-method-checkbox[value="${method}"]`);
+                                if (checkbox) checkbox.checked = true;
+                            });
+                            updateAmountInputs();
+                        }
+                        
+                        paymentModal.show();
+                    } else {
+                        alert('Error: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to fetch order details. Please try again.');
+                });
         });
     });
     
-    // Handle payment method selection
-    document.querySelectorAll('.payment-option').forEach(option => {
-        option.addEventListener('click', function(e) {
-            e.preventDefault();
-            const method = this.getAttribute('data-method');
-            const orderId = document.getElementById('paymentOrderId').value;
-            
-            fetch(`/update-payment-method/${orderId}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    order_id: orderId,
-                    payment_method: method
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    //alert('Payment method updated successfully');
-                    // Close modal and reload page
-                    paymentModal.hide();
-                    setTimeout(() => {
-                        location.reload();
-                    }, 500);
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to update payment method');
-            });
+    // Handle checkbox changes to show amount inputs
+    document.querySelectorAll('.payment-method-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateAmountInputs();
         });
     });
+    
+    function updateAmountInputs() {
+        const container = document.getElementById('amountInputsContainer');
+        container.innerHTML = '';
+        
+        const checkedBoxes = Array.from(document.querySelectorAll('.payment-method-checkbox:checked'));
+        
+        if (checkedBoxes.length === 0) {
+            document.getElementById('remainingAmountDisplay').textContent = `₹${orderTotalAmount.toFixed(2)}`;
+            return;
+        }
+        
+        if (checkedBoxes.length === 1) {
+            // Single method - auto fill with full amount
+            const method = checkedBoxes[0].value;
+            container.innerHTML = `
+                <div class="input-group amount-input-group">
+                    <span class="input-group-text">${method.toUpperCase()}</span>
+                    <input type="number" class="form-control amount-input" 
+                           data-method="${method}" 
+                           value="${orderTotalAmount.toFixed(2)}" 
+                           step="0.01" min="0" max="${orderTotalAmount}"
+                           readonly>
+                </div>
+            `;
+            document.getElementById('remainingAmountDisplay').textContent = '₹0.00';
+        } else {
+            // Multiple methods - let user specify amounts
+            checkedBoxes.forEach((checkbox, index) => {
+                const method = checkbox.value;
+                const isLast = index === checkedBoxes.length - 1;
+                
+                container.innerHTML += `
+                    <div class="input-group amount-input-group">
+                        <span class="input-group-text">${method.toUpperCase()}</span>
+                        <input type="number" class="form-control amount-input" 
+                               data-method="${method}" 
+                               value="${isLast ? '' : '0.00'}" 
+                               step="0.01" min="0" max="${orderTotalAmount}"
+                               ${isLast ? 'readonly' : ''}>
+                        ${isLast ? '<span class="input-group-text bg-light">Auto</span>' : ''}
+                    </div>
+                `;
+            });
+            
+            // Add event listeners to amount inputs
+            document.querySelectorAll('.amount-input:not([readonly])').forEach(input => {
+                input.addEventListener('input', calculateRemainingAmount);
+            });
+            
+            calculateRemainingAmount();
+        }
+    }
+    
+    function calculateRemainingAmount() {
+        const amountInputs = Array.from(document.querySelectorAll('.amount-input:not([readonly])'));
+        const totalEntered = amountInputs.reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
+        const remaining = orderTotalAmount - totalEntered;
+        
+        document.getElementById('remainingAmountDisplay').textContent = `₹${remaining.toFixed(2)}`;
+        
+        // Update the last (auto-calculated) input
+        const lastInput = document.querySelector('.amount-input[readonly]');
+        if (lastInput) {
+            lastInput.value = remaining.toFixed(2);
+        }
+    }
+    
+    // Handle save button click
+    document.getElementById('savePaymentMethods').addEventListener('click', function() {
+        const checkedBoxes = Array.from(document.querySelectorAll('.payment-method-checkbox:checked'));
+        const amountInputs = Array.from(document.querySelectorAll('.amount-input'));
+        
+        if (checkedBoxes.length === 0) {
+            alert('Please select at least one payment method');
+            return;
+        }
+        
+        const paymentData = {
+            methods: checkedBoxes.map(box => box.value),
+            amounts: amountInputs.map(input => parseFloat(input.value) || 0),
+            is_combined: isCombinedOrder
+        };
+        
+        // Validate amounts sum to order total
+        const totalEntered = paymentData.amounts.reduce((sum, amount) => sum + amount, 0);
+        if (Math.abs(totalEntered - orderTotalAmount) > 0.01) {
+            alert(`Amounts must sum to ₹${orderTotalAmount.toFixed(2)}`);
+            return;
+        }
+        
+        fetch(`/update-payment-methods/${currentOrderId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(paymentData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                paymentModal.hide();
+                setTimeout(() => {
+                    location.reload();
+                }, 500);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update payment methods');
+        });
+    });
+
 });
 </script>
-
 {% endblock %}

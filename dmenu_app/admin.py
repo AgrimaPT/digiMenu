@@ -33,3 +33,7 @@ class OrderItemAdmin(admin.ModelAdmin):
 class Profile(admin.ModelAdmin):
     list_display = ('user',)
 
+
+# @admin.register(OrderPayment)
+# class OrderPayment(admin.ModelAdmin):
+#     list_display=('order',)

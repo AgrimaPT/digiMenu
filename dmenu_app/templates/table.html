@@ -512,11 +512,13 @@ h5.text-center {
                     <strong>Total: ₹0.00</strong>
                 </div>
                 <div class="text-center mt-4">
+                    
                     <a href="{% url 'confirm_order' username=restaurant.username table_number=table.number %}" 
                         class="btn btn-primary" 
                         id="place-order-button" 
                         onclick="return order()">Place Order
                     </a>
+                    
                 </div>
             </div>
         </div>

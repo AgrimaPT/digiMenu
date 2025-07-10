@@ -60,8 +60,10 @@ def table_view(request, username, table_number):
     table = get_object_or_404(Table, number=table_number, user__username=username)
     
     restaurant_profile = get_object_or_404(Profile, user=table.user)
+    if restaurant_profile.menu_display_mode == 'category_first':
+        return redirect('category_grid', username=username, table_number=table_number)
 
-    # menu_items = MenuItem.objects.filter(available=True, user=table.user)
+    menu_items = MenuItem.objects.filter(available=True, user=table.user)
     
     categories = Category.objects.filter(user=table.user,available=True).annotate(
         effective_sort_id=Case(
@@ -511,6 +513,80 @@ def update_availability(request, username, item_id):
 #     return render(request, 'order_success.html', {'order_data': order_data, 'table': table})
 
 
+# def confirm_order(request, username, table_number):
+#     """
+#     Public order confirmation view
+#     - No login required
+#     - Uses username and table_number from QR code
+#     """
+#     table = get_object_or_404(Table, number=table_number, user__username=username)
+    
+#     if request.method == 'POST':
+#         customer_name = request.POST.get('customer_name')
+#         customer_phone = request.POST.get('customer_phone')
+#         cart_items = request.POST.get('cart_items')
+        
+#         # Validate required fields
+#         if not all([customer_name, customer_phone, cart_items]):
+#             return render(request, 'order_confirmation.html', {
+#                 'table': table,
+#                 'restaurant': table.user,
+#                 'error': 'All fields (name, phone, and cart) are required.'
+#             })
+
+#         try:
+#             cart_data = json.loads(cart_items)
+#             if not isinstance(cart_data, dict):
+#                 raise ValueError("Invalid cart format")
+#         except (json.JSONDecodeError, ValueError) as e:
+#             return render(request, 'order_confirmation.html', {
+#                 'table': table,
+#                 'restaurant': table.user,
+#                 'error': f'Invalid cart data: {str(e)}'
+#             })
+
+#         # Create order
+#         order = Order(
+#             table=table,
+#             user=table.user,
+#             customer_name=customer_name,
+#             customer_phone=customer_phone,
+#             status='Pending'
+#         )
+#         order.save()
+
+#         # Add order items
+#         for item_id, item_data in cart_data.items():
+#             try:
+#                 item = get_object_or_404(MenuItem, id=item_id, user=table.user)
+#                 OrderItem.objects.create(
+#                     order=order,
+#                     menu_item=item,
+#                     quantity=int(item_data.get('quantity', 1)),
+#                     price=float(item_data.get('price', item.price)),
+#                     notes=item_data.get('notes', '')
+#                 )
+#             except (MenuItem.DoesNotExist, ValueError) as e:
+#                 print(f"Error adding item {item_id}: {str(e)}")
+#                 continue
+
+#         order.calculate_total()
+        
+#         # Store minimal data in session
+#         request.session['last_order'] = {
+#             'id': order.id,
+#             'table_number': table.number,
+#             'restaurant': table.user.username
+#         }
+#         return redirect('order_success', username=username, table_number=table.number)
+#     return render(request, 'order_confirmation.html', {
+#         'table': table,
+#         'restaurant': table.user
+#     })
+
+
+
+
 def confirm_order(request, username, table_number):
     """
     Public order confirmation view
@@ -549,7 +625,8 @@ def confirm_order(request, username, table_number):
             user=table.user,
             customer_name=customer_name,
             customer_phone=customer_phone,
-            status='Pending'
+            status='Pending',
+            _payment_methods='[]',
         )
         order.save()
 
@@ -570,6 +647,8 @@ def confirm_order(request, username, table_number):
 
         order.calculate_total()
         
+        request.session['play_sound'] = 1
+        request.session.modified = True
         # Store minimal data in session
         request.session['last_order'] = {
             'id': order.id,
@@ -605,56 +684,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from .models import Table, Order
 
-# def dashboard_orders(request):
-#     global alertmessage
-    
-#     sound=0
 
-#     if  alertmessage==True:
-
-#         print("---------------------------")
-#         sound=1
-#     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  # Check if it's an AJAX request
-#         orders_by_table = {}
-#         tables = Table.objects.all().order_by('id')
-
-#         for table in tables:
-#             pending_orders = Order.objects.filter(table=table, status='Pending')
-#             orders_by_table[table.id] = pending_orders.count()  # Send count instead of objects
-#             table.has_pending_orders = pending_orders.exists()
-#         sound=0
-#         if alertmessage==True:
-#            print("|||||||||||||||||||||||||||")
-           
-#            sound=1
-
-
-#         data = {
-#             'tables': [
-#                 {
-#                     'id': table.id,
-#                     'number': table.number,
-#                     'has_pending_orders': table.has_pending_orders,
-#                     'order_count': orders_by_table[table.id]
-#                 } for table in tables
-#             ],
-#             'sound':sound
-#         }
-#         alertmessage=False
-
-#         return JsonResponse(data)
-#     alertmessage=False
-
-#     return render(request, 'dashboard/orders.html', {'tables': Table.objects.all().order_by('id'),'sound':sound})
-
-
-# def table_pending_orders(request, table_id):
-#     table = get_object_or_404(Table, id=table_id)
-#     pending_orders = Order.objects.filter(table=table, status='Pending').order_by('created_at')
-#     return render(request, 'dashboard/table_pending_orders.html', {
-#         'table': table,
-#         'pending_orders': pending_orders,
-#     })
 
 from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
@@ -714,6 +744,24 @@ def dashboard_orders(request, username=None):
         'current_user': request.user
     })
 
+@login_required
+def create_order(request, username):
+    if request.method == 'POST':
+        try:
+            # Your existing order creation logic
+            # ...
+            
+            # After successfully creating the order:
+            request.session['play_sound'] = 1
+            request.session.modified = True  # Ensure the session is saved
+            
+            return JsonResponse({'status': 'success', 'order_id': new_order.id})
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 # @login_required
 # def dashboard_orders(request, username=None):
 #     # Verify user access
@@ -760,9 +808,14 @@ def table_pending_orders(request, username, table_id):
         return redirect('login')
     
     table = get_object_or_404(Table, id=table_id, user=request.user)
+    # pending_orders = Order.objects.filter(
+    #     table=table, 
+    #     status='Pending',
+    #     user=request.user  
+    # ).order_by('created_at')
     pending_orders = Order.objects.filter(
-        table=table, 
-        status='Pending',
+        table=table,
+        billed=False,
         user=request.user  # Ensure user ownership
     ).order_by('created_at')
     
@@ -1057,23 +1110,51 @@ def generate_combined_bill(request):
 #         return JsonResponse({'error': 'Order not found'}, status=404)
 
 
-# @csrf_exempt
-# def update_item_status(request):
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             item_id = data.get('item_id')
-#             is_completed = data.get('is_completed')
+@csrf_exempt
+def update_item_status(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            item_id = data.get('item_id')
+            is_completed = data.get('is_completed')
 
-#             item = OrderItem.objects.get(id=item_id)
-#             item.is_completed = is_completed  # ✅ Save the completed state
-#             item.save()
+            item = OrderItem.objects.get(id=item_id)
+            item.is_completed = is_completed  # ✅ Save the completed state
+            item.save()
 
-#             return JsonResponse({'status': 'success'})
-#         except Exception as e:
-#             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-#     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+
+
+@login_required
+@csrf_protect
+def update_order_status(request, username, order_id):
+    # Verify user owns this order
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    
+    if request.user.username != username:
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    
+    order.status = 'Completed'
+    order.save()
+
+    # Get the updated count of pending orders for the same table
+    pending_orders_count = Order.objects.filter(
+        table=order.table, 
+        status='Pending',
+        user=request.user  # Ensure we only count user's orders
+    ).count()
+
+    return JsonResponse({
+        'status': 'success',
+        'pending_orders_count': pending_orders_count,
+        'order_id': order.id
+    })
+
 
 @csrf_exempt
 @require_POST
@@ -1122,6 +1203,140 @@ def update_item_status(request, username):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+
+# @login_required
+# @csrf_protect
+# def update_order_status(request, username, order_id):
+#     # Verify user owns this order
+#     order = get_object_or_404(Order, id=order_id, user=request.user)
+    
+#     if request.user.username != username:
+#         return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    
+#     try:
+#         data = json.loads(request.body) if request.body else {}
+#         new_status = data.get('status', 'Completed')
+        
+#         # Validate status
+#         if new_status not in dict(Order.status).keys():
+#             return JsonResponse({
+#                 'status': 'error',
+#                 'message': 'Invalid status value'
+#             }, status=400)
+        
+#         order.status = new_status
+#         order.save()
+
+#         # Check if all items are completed when marking order as Completed
+#         if new_status == 'Completed':
+#             incomplete_items = order.items.filter(is_completed=False).exists()
+#             if incomplete_items:
+#                 return JsonResponse({
+#                     'status': 'error',
+#                     'message': 'Cannot complete order with pending items',
+#                     'order_id': order.id
+#                 }, status=400)
+
+#         # Get updated order data
+#         order_data = {
+#             'id': order.id,
+#             'status': order.status,
+#             'all_completed': not order.items.filter(is_completed=False).exists(),
+#             'items': [{
+#                 'id': item.id,
+#                 'item_name': item.item_name,
+#                 'quantity': item.quantity,
+#                 'is_completed': item.is_completed
+#             } for item in order.items.all()]
+#         }
+
+#         return JsonResponse({
+#             'status': 'success',
+#             'order': order_data,
+#             'pending_orders_count': Order.objects.filter(
+#                 table=order.table,
+#                 status='Pending',
+#                 user=request.user
+#             ).count()
+#         })
+
+#     except Exception as e:
+#         return JsonResponse({
+#             'status': 'error',
+#             'message': str(e)
+#         }, status=500)
+
+
+# @login_required
+# @csrf_protect
+# def update_item_status(request, username):
+#     try:
+#         # Parse JSON data
+#         data = json.loads(request.body)
+#         item_id = data.get('item_id')
+#         is_completed = data.get('is_completed')
+#         order_id = data.get('order_id')
+
+#         # Validate
+#         if None in [item_id, is_completed, order_id]:
+#             return JsonResponse({
+#                 'status': 'error',
+#                 'message': 'Missing required parameters'
+#             }, status=400)
+
+#         # Verify ownership
+#         item = get_object_or_404(
+#             OrderItem.objects.select_related('order'),
+#             id=item_id,
+#             order__user=request.user,
+#             order__id=order_id
+#         )
+
+#         # Update item
+#         item.is_completed = is_completed
+#         item.save()
+
+#         # Get updated order data
+#         order = item.order
+#         all_completed = not order.items.filter(is_completed=False).exists()
+        
+#         order_data = {
+#             'id': order.id,
+#             'all_completed': all_completed,
+#             'items': [{
+#                 'id': i.id,
+#                 'item_name': i.item_name,
+#                 'quantity': i.quantity,
+#                 'is_completed': i.is_completed
+#             } for i in order.items.all()]
+#         }
+
+#         return JsonResponse({
+#             'status': 'success',
+#             'order': order_data,
+#             'item': {
+#                 'id': item.id,
+#                 'is_completed': item.is_completed
+#             }
+#         })
+
+#     except json.JSONDecodeError:
+#         return JsonResponse({
+#             'status': 'error',
+#             'message': 'Invalid JSON data'
+#         }, status=400)
+#     except OrderItem.DoesNotExist:
+#         return JsonResponse({
+#             'status': 'error',
+#             'message': 'Order item not found'
+#         }, status=404)
+#     except Exception as e:
+#         return JsonResponse({
+#             'status': 'error',
+#             'message': str(e)
+#         }, status=500)
+    
 
 def order_details(request, username, order_id):
     try:
@@ -1441,120 +1656,104 @@ from decimal import Decimal
 from itertools import chain
 from .models import Table, Order, OrderItem
 
-
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, F, Prefetch
-from django.shortcuts import get_object_or_404, render
 from datetime import datetime, date
 from decimal import Decimal
 from itertools import chain
+from django.db.models import Prefetch
 from .models import Table, Order, OrderItem
+ # Assuming you have a helper for this
 
 @login_required
 def billed_orders(request, table_number):
-    # Get table for current user only
     table = get_object_or_404(Table, number=table_number, user=request.user)
-    
-    # Date filtering logic
+
     selected_date = request.GET.get('date')
-    if selected_date:
-        try:
-            filter_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
-        except (ValueError, TypeError):
-            filter_date = date.today()
-    else:
+    try:
+        filter_date = datetime.strptime(selected_date, '%Y-%m-%d').date() if selected_date else date.today()
+    except (ValueError, TypeError):
         filter_date = date.today()
 
-    # Payment method filter
     payment_method = request.GET.get('payment_method')
 
-    
-    # Base queryset with date filtering and user restriction
-    # billed_orders = Order.objects.filter(
-    #     table=table,
-    #     billed=True,
-    #     updated_at__date=filter_date,
-    #     user=request.user  # Ensure orders belong to current user
-    # ).prefetch_related(
-    #     Prefetch('items', queryset=OrderItem.objects.select_related('menu_item'))
-    # ).order_by('-updated_at')
-
-    billed_orders = Order.objects.filter(
+    # Query all billed orders for this table and date
+    billed_orders_qs = Order.objects.filter(
         table=table,
         billed=True,
         updated_at__date=filter_date,
         user=request.user
-    )
-
-    if payment_method:  # Apply only if user selected a filter
-        billed_orders = billed_orders.filter(payment_method=payment_method)
-
-    billed_orders = billed_orders.prefetch_related(
+    ).prefetch_related(
         Prefetch('items', queryset=OrderItem.objects.select_related('menu_item'))
     ).order_by('-updated_at')
 
+    billed_orders_all = list(billed_orders_qs)  # For totals
+    billed_orders_display = billed_orders_all  # For filtered table display
 
-    individual_orders = []
-    combined_orders_dict = {}
+    # if payment_method:
+    #     billed_orders_display = [
+    #         order for order in billed_orders_all
+    #         if payment_method in (order.payment_methods or [])
+    #     ]
+    if payment_method:
+        if payment_method == 'pending':
+            billed_orders_display = [order for order in billed_orders_all if not order.payment_methods]
+        else:
+            billed_orders_display = [
+                order for order in billed_orders_all
+                if order.payment_methods and payment_method.lower() in [pm.strip().lower() for pm in order.payment_methods]
+            ]
+
+    # Calculate daily total from all billed orders
     daily_total = Decimal('0.00')
-
-    # Process orders with user validation
-    for order in billed_orders:
-        # Additional security check (optional but recommended)
-        if order.user != request.user:
-            continue
-            
-        if order.final_total is None or order.final_total == 0:
+    for order in billed_orders_all:
+        if not order.final_total:
             order.final_total = calculate_order_total(order)
             order.save(update_fields=['final_total'])
-        
         daily_total += order.final_total
 
-        if order.combined_id:
-            combined_orders_dict.setdefault(order.combined_id, []).append(order)
-        else:
-            individual_orders.append(order)
+    # Process filtered orders (for display only)
+    display_individual_orders = []
+    display_combined_orders_dict = {}
 
-    # Prepare combined orders with user validation
+    for order in billed_orders_display:
+        if order.combined_id:
+            display_combined_orders_dict.setdefault(order.combined_id, []).append(order)
+        else:
+            display_individual_orders.append(order)
+
     combined_orders_list = []
-    for combined_id, orders in combined_orders_dict.items():
-        # Verify all orders belong to current user
+    for combined_id, orders in display_combined_orders_dict.items():
         valid_orders = [o for o in orders if o.user == request.user]
         if not valid_orders:
             continue
-            
-        # Recalculate totals if needed
         for order in valid_orders:
-            if order.final_total == 0:
+            if not order.final_total:
                 order.final_total = calculate_order_total(order)
                 order.save(update_fields=['final_total'])
-
         combined_total = sum(order.final_total for order in valid_orders)
-        
         combined_orders_list.append({
             'type': 'combined',
             'combined_id': combined_id,
             'orders': valid_orders,
             'total_amount': combined_total,
-            'updated_at': max(order.updated_at for order in valid_orders)
+            'updated_at': max(order.updated_at for order in valid_orders),
+            'has_pending_payments': any(not order.payment_methods for order in valid_orders),
         })
 
-    # Prepare individual orders list
     individual_orders_list = [{
         'type': 'single',
         'order': order,
         'total_amount': order.final_total,
-        'updated_at': order.updated_at
-    } for order in individual_orders if order.user == request.user]
+        'updated_at': order.updated_at,
+    } for order in display_individual_orders if order.user == request.user]
 
-    # Combine and sort all orders
     final_order_list = sorted(
         chain(combined_orders_list, individual_orders_list),
         key=lambda x: x['updated_at'],
         reverse=True
     )
 
-    # Add sequential numbering
     for index, entry in enumerate(final_order_list, start=1):
         entry['number'] = index
 
@@ -1564,9 +1763,10 @@ def billed_orders(request, table_number):
         'selected_date': filter_date,
         'today': date.today(),
         'daily_total': daily_total,
-        'order_count': len(final_order_list),
-        'user': request.user  # Pass user to template if needed
+        'order_count': len(billed_orders_all),  # Count of all billed orders (not filtered)
+        'user': request.user
     })
+
 
 def calculate_order_total(order):
     """Helper function to calculate order total with taxes and discount"""
@@ -2177,9 +2377,36 @@ def view_profile(request, username):
         return redirect('view_profile', username=request.user.username)
     return render(request, 'dashboard/profile_view.html', {'profile_user': user})
 
+# @login_required
+# def edit_profile(request, username):
+#     user = get_object_or_404(User, username=username)
+#     # Ensure users can only edit their own profile
+#     if request.user != user:
+#         return redirect('edit_profile', username=request.user.username)
+    
+#     if request.method == 'POST':
+#         user_form = UserUpdateForm(request.POST, instance=user)
+#         profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=user.profile)
+        
+#         if user_form.is_valid() and profile_form.is_valid():
+#             user_form.save()
+#             profile_form.save()
+#             return redirect('view_profile', username=user.username)
+#     else:
+#         user_form = UserUpdateForm(instance=user)
+#         profile_form = ProfileUpdateForm(instance=user.profile)
+    
+#     return render(request, 'dashboard/profile_edit.html', {
+#         'user_form': user_form,
+#         'profile_form': profile_form,
+#         'profile_user': user
+#     })
+
+
 @login_required
 def edit_profile(request, username):
     user = get_object_or_404(User, username=username)
+    
     # Ensure users can only edit their own profile
     if request.user != user:
         return redirect('edit_profile', username=request.user.username)
@@ -2191,16 +2418,21 @@ def edit_profile(request, username):
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
+            messages.success(request, 'Your profile has been updated!')
             return redirect('view_profile', username=user.username)
+        else:
+            # Forms are invalid - they'll be re-rendered with errors
+            messages.error(request, 'Please correct the errors below.')
     else:
         user_form = UserUpdateForm(instance=user)
         profile_form = ProfileUpdateForm(instance=user.profile)
     
-    return render(request, 'dashboard/profile_edit.html', {
+    context = {
         'user_form': user_form,
         'profile_form': profile_form,
         'profile_user': user
-    })
+    }
+    return render(request, 'dashboard/profile_edit.html', context)
 
 # @csrf_exempt
 # def update_payment_method(request):
@@ -2227,6 +2459,13 @@ from django.shortcuts import get_object_or_404
 
 def category_grid(request, username, table_number):
     table = get_object_or_404(Table, number=table_number, user__username=username)
+    
+    restaurant_profile = get_object_or_404(Profile, user=table.user)
+    
+    # If profile is set to category-first, redirect to the appropriate view
+    if restaurant_profile.menu_display_mode == 'grid':
+        return redirect('table_view', username=username, table_number=table_number)
+    
     categories = Category.objects.filter(user=request.user, available=True).annotate(
         effective_sort_id=Case(
             When(sort_id__isnull=True, then=Value(999999)),
@@ -2248,6 +2487,11 @@ def category_items(request, username, table_number, category_id):
     
 
     restaurant_profile = get_object_or_404(Profile, user=table.user)
+
+     # If profile is set to category-first, redirect to the appropriate view
+    # if restaurant_profile.menu_display_mode == 'grid':
+    #     return redirect('table_view', username=username, table_number=table_number)
+    
     return render(request, 'category_items.html', {
         'category': category,
         'items': items,
@@ -2298,3 +2542,227 @@ def menu_display_settings(request):
     return render(request, 'dashboard/menu_display_settings.html', {
         'profile': profile
     })
+
+def menu_display(request, username, table_number):
+    table = get_object_or_404(Table, number=table_number, user__username=username)
+    restaurant_profile = get_object_or_404(Profile, user=table.user)
+    
+    if restaurant_profile.menu_display_mode == 'category_first':
+        return category_grid(request, username, table_number)
+    else:
+        return table_view(request, username, table_number)
+    
+
+def select_table(request, username):
+    tables = Table.objects.filter(user__username=username)
+    return render(request, 'table_select.html', {'tables': tables, 'username': username})
+
+
+
+# views.py
+from django.http import JsonResponse
+import json
+
+@csrf_exempt
+def save_payment_methods(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        order_id = data.get('order_id')
+        payments = data.get('payments', [])
+
+        order = Order.objects.get(id=order_id)
+        order.payments.all().delete()  # Clear existing payments
+
+        for payment in payments:
+            method = payment.get('method')
+            amount = payment.get('amount')
+            if method and amount:
+                OrderPayment.objects.create(order=order, method=method, amount=amount)
+
+        return JsonResponse({
+            'success': True,
+            'display_text': ', '.join(
+                f"{p['method'].capitalize()}: ₹{p['amount']}" for p in payments
+            )
+        })
+    return JsonResponse({'success': False}, status=400)
+
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import Order
+
+# @csrf_exempt
+# def update_payment_method(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         order_id = data.get('order_id')
+#         payments = data.get('payments')
+
+#         try:
+#             order = Order.objects.get(id=order_id)
+#             # Save payment methods (you may need to design how you want to store multiple methods)
+#             order.payment_method = ','.join([p['method'] for p in payments])
+#             order.payment_split = payments  # Optional: save as JSON field
+#             order.save()
+#             return JsonResponse({'success': True})
+#         except Order.DoesNotExist:
+#             return JsonResponse({'error': 'Order not found'}, status=404)
+#     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+
+# @login_required
+# @require_http_methods(["GET"])
+# def get_order_details(request, order_id):
+#     is_combined = request.GET.get('combined', 'false').lower() == 'true'
+    
+#     if is_combined:
+#         # Get combined order details
+#         orders = Order.objects.filter(
+#             combined_id=order_id,
+#             user=request.user
+#         )
+#         total_amount = sum(order.final_total for order in orders)
+#     else:
+#         # Get single order details
+#         order = get_object_or_404(Order, id=order_id, user=request.user)
+#         total_amount = order.final_total
+    
+#     return JsonResponse({
+#         'success': True,
+#         'total_amount': str(total_amount)
+#     })
+
+@login_required
+@require_http_methods(["GET"])
+def get_order_details(request, order_id):
+    is_combined = request.GET.get('combined', 'false').lower() == 'true'
+    
+    try:
+        if is_combined:
+            # Get combined order details
+            orders = Order.objects.filter(
+                combined_id=order_id,
+                user=request.user
+            )
+            if not orders.exists():
+                return JsonResponse({'success': False, 'error': 'No orders found with this combined ID'})
+                
+            total_amount = sum(order.final_total for order in orders)
+            # Get unique payment methods from all orders in the combined order
+            payment_methods = []
+            for order in orders:
+                payment_methods.extend(order.payment_methods)
+            payment_methods = list(set(payment_methods))  # Get unique methods
+            
+            return JsonResponse({
+                'success': True,
+                'total_amount': str(total_amount),
+                'payment_methods': payment_methods,
+                'is_combined': True
+            })
+        else:
+            # Get single order details
+            order = get_object_or_404(Order, id=order_id, user=request.user)
+            return JsonResponse({
+                'success': True,
+                'total_amount': str(order.final_total),
+                'payment_methods': order.payment_methods,
+                'is_combined': False
+            })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+@require_http_methods(["POST"])
+def update_payment_methods(request, order_id):
+    try:
+        data = json.loads(request.body)
+        methods = data.get('methods', [])
+        amounts = data.get('amounts', [])
+        is_combined = data.get('is_combined', False)
+        
+        if is_combined:
+            # Update all orders in the combined order
+            orders = Order.objects.filter(
+                combined_id=order_id,
+                user=request.user
+            )
+            
+            # Distribute payments across orders (simplified implementation)
+            for order in orders:
+                order.payment_methods = methods
+                order.save()
+        else:
+            # Update single order
+            order = Order.objects.get(id=order_id, user=request.user)
+            order.payment_methods = methods
+            order.save()
+            
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# @login_required
+# @require_http_methods(["POST"])
+# def update_payment_methods(request, order_id):
+#     try:
+#         data = json.loads(request.body)
+#         methods = data.get('methods', [])
+#         amounts = data.get('amounts', [])
+#         is_combined = data.get('is_combined', False)
+        
+#         if is_combined:
+#             # Update all orders in the combined order
+#             orders = Order.objects.filter(
+#                 combined_id=order_id,
+#                 user=request.user
+#             )
+#             for order in orders:
+#                 order.payment_methods = methods
+#                 if hasattr(order, 'payment_amounts'):
+#                     order.payment_amounts = amounts
+#                 order.save()
+            
+#             # Return complete data for all orders in the combined order
+#             orders_data = []
+#             for order in orders:
+#                 orders_data.append({
+#                     'id': order.id,
+#                     'user_order_id': order.user_order_id,
+#                     'payment_methods': order.payment_methods,
+#                     'payment_amounts': getattr(order, 'payment_amounts', []),
+#                     'final_total': str(order.final_total),
+#                     'updated_at': order.updated_at.strftime("%I:%M %p")
+#                 })
+            
+#             return JsonResponse({
+#                 'success': True,
+#                 'is_combined': True,
+#                 'orders': orders_data,
+#                 'combined_id': order_id
+#             })
+#         else:
+#             # Update single order
+#             order = Order.objects.get(id=order_id, user=request.user)
+#             order.payment_methods = methods
+#             if hasattr(order, 'payment_amounts'):
+#                 order.payment_amounts = amounts
+#             order.save()
+            
+#             return JsonResponse({
+#                 'success': True,
+#                 'is_combined': False,
+#                 'order': {
+#                     'id': order.id,
+#                     'user_order_id': order.user_order_id,
+#                     'payment_methods': order.payment_methods,
+#                     'payment_amounts': getattr(order, 'payment_amounts', []),
+#                     'final_total': str(order.final_total),
+#                     'updated_at': order.updated_at.strftime("%I:%M %p")
+#                 }
+#             })
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'error': str(e)})

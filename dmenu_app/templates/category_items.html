@@ -131,7 +131,7 @@
                 <p class="mb-0 text-muted">{{ category.description }}</p>
                 {% endif %}
             </div>
-            <a href="/{{ request.user.username }}/table/{{ table.number }}/categories/" 
+            <a href="/{{ request.user.username }}/table/{{ table.number }}/" 
                class="btn btn-outline-secondary back-btn">
                 ← Back to Categories
             </a>
@@ -229,13 +229,12 @@
     </div>
 
     <script>
-        // Cart functionality - same as in your main template
         document.addEventListener("DOMContentLoaded", function () {
             const username = "{{ request.user.username }}";
             const tableNumber = "{{ table.number }}";
             let cartKey = `cart_${username}_${tableNumber}`;
+            //let cart = JSON.parse(localStorage.getItem(cartKey)) || {};
             let cart = JSON.parse(sessionStorage.getItem(cartKey)) || {};
-
             console.log("Cart Data:", cart);
 
             if (Object.keys(cart).length === 0) {
@@ -244,7 +243,7 @@
             }
             
             function saveCart(cart) {
-                sessionStorage.setItem(cartKey, JSON.stringify(cart));
+                localStorage.setItem(cartKey, JSON.stringify(cart));
             }
 
             window.addToCart = function(id, name, price) {
@@ -372,11 +371,21 @@
                     alert("Your cart is empty!");
                     return false;
                 }
+                
 
-                sessionStorage.setItem(cartKey, JSON.stringify(cart));
+                // Save to localStorage with the correct key
+                localStorage.setItem(cartKey, JSON.stringify(cart));
+                
+                // Also save to a temporary key that the confirmation page can check
+                localStorage.setItem('current_cart', JSON.stringify({
+                    restaurant: username,
+                    table: tableNumber,
+                    cart: cart
+                }));
+                
                 return true;
             }
-
+            
             // Initialize quantity inputs with cart data
             updateCartUI();
             updateMenuUI();

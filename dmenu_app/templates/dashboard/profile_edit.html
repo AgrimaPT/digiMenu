@@ -101,6 +101,17 @@
         <div class="edit-header">
             <h1>Edit Profile</h1>
         </div>
+        <!-- {% if messages %}
+            <div class="messages" style="margin-bottom: 1rem;">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="padding: 0.75rem 1.25rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: 0.25rem; 
+                        {% if message.tags == 'error' %}color: #721c24; background-color: #f8d7da; border-color: #f5c6cb;
+                        {% else %}color: #155724; background-color: #d4edda; border-color: #c3e6cb;{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %} -->
 
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
@@ -165,6 +176,22 @@
             <!-- Business Preferences -->
             <div class="form-section">
                 <h2>Business Preferences</h2>
+
+                <div class="form-group">
+                    <label for="{{ profile_form.menu_display_mode.id_for_label }}">Menu Display Style</label>
+                    {{ profile_form.menu_display_mode }}
+                    {% if profile_form.menu_display_mode.errors %}
+                        <div class="error-message" style="color: #dc3545; font-size: 0.875rem;">
+                            {% for error in profile_form.menu_display_mode.errors %}
+                                {{ error }}<br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small style="display: block; margin-top: 0.5rem; color: #666; font-size: 0.875rem;">
+                        Choose how your menu items will be displayed to customers
+                    </small>
+                </div>
+
                 <div class="form-group">
                     <label for="{{ profile_form.theme_color.id_for_label }}">Theme Color</label>
                     <div class="color-picker">

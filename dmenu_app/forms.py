@@ -146,9 +146,11 @@ class ProfileUpdateForm(forms.ModelForm):
             'gst_number',
             'theme_color',
             'cart_enabled',
-            'menu_display_mode'
+            'menu_display_mode',
+            
             
         ]
         widgets = {
             'theme_color': forms.TextInput(attrs={'type': 'color'}),
+            'menu_display_mode': forms.Select(choices=Profile.MENU_DISPLAY_CHOICES),
         }

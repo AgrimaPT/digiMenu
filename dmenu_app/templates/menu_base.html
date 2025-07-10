@@ -1,4 +1,9 @@
-{% if request.user.profile.menu_display_mode == 'category_first' %}
+<!-- {% if request.user.profile.menu_display_mode == 'category_first' %}
+    {% include 'category_grid.html' %}
+{% else %}
+    {% include 'table.html' %}
+{% endif %} -->
+{% if request.user.is_authenticated and request.user.profile.menu_display_mode == 'category_first' %}
     {% include 'category_grid.html' %}
 {% else %}
     {% include 'table.html' %}

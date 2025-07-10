@@ -146,7 +146,7 @@
         
         <div class="text-center mt-4">
             {% if table %}
-                <a href="{% url 'table_view' username=restaurant.username table_number=table.number %}" class="btn btn-success">
+                <a href="{% url 'menu_display' username=restaurant.username table_number=table.number %}" class="btn btn-success">
                     <i class="fas fa-utensils me-2"></i>Back to Table
                 </a>
             {% else %}
@@ -165,7 +165,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // You could add a simple confetti effect here
             console.log('Order confirmed!');
+            
         });
+        
     </script>
 </body>
 </html>

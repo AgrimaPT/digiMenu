@@ -54,8 +54,8 @@ urlpatterns = [
 
 
 
-
-    path('<str:username>/table/<str:table_number>/', views.table_view, name='table_view'),
+    path('<username>/table/<int:table_number>/', views.menu_display, name='menu_display'),
+    # path('<str:username>/table/<str:table_number>/', views.table_view, name='table_view'),
     path('<str:username>/table/<str:table_number>/confirm/', views.confirm_order, name='confirm_order'),
     path('<str:username>/table/<str:table_number>/success/', views.order_success, name='order_success'),
     
@@ -97,10 +97,19 @@ urlpatterns = [
     #  path('update-payment-method/', views.update_payment_method, name='update_payment_method'),
 
 
-
-    path('<str:username>/table/<int:table_number>/categories/', views.category_grid, name='category_grid'),
+    
+    # path('<str:username>/table/<int:table_number>/categories/', views.category_grid, name='category_grid'),
     path('<str:username>/table/<int:table_number>/category/<int:category_id>/', views.category_items, name='category_items'),
     path('dashboard/menu-settings/', views.menu_display_settings, name='menu_display_settings'),
+
+    path('<str:username>/select-table/', views.select_table, name='select_table'),
+    path('update-payment-method/', views.update_payment_method, name='update_payment_method'),
+    # path('get-order-details/<int:order_id>/', views.get_order_details, name='get_order_details'),
+    # path('update-payment-methods/<int:order_id>/', views.update_payment_methods, name='update_payment_methods'),
+    path('get-order-details/<uuid:order_id>/', views.get_order_details, name='get_order_details_uuid'),
+    path('get-order-details/<int:order_id>/', views.get_order_details, name='get_order_details_int'),
+    path('update-payment-methods/<uuid:order_id>/', views.update_payment_methods, name='update_payment_methods_uuid'),
+    path('update-payment-methods/<int:order_id>/', views.update_payment_methods, name='update_payment_methods_int'),
 
 
 

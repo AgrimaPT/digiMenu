@@ -19,7 +19,7 @@ class Profile(models.Model):
     cart_enabled = models.BooleanField(default=True)
 
     MENU_DISPLAY_CHOICES = [
-        ('grid', 'Grid View (All items)'),
+        ('grid', 'Item First View'),
         ('category_first', 'Category First View'),
     ]
     menu_display_mode = models.CharField(
@@ -189,6 +189,8 @@ import uuid  # For combined_id
 #     def __str__(self):
 #         return f"Order {self.id} - Table {self.table.id if self.table else 'N/A'}"
 
+from django.contrib.postgres.fields import ArrayField
+import json
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True) 
@@ -201,7 +203,7 @@ class Order(models.Model):
     status = models.CharField(max_length=50, choices=[
         ('Pending', 'Pending'),
         ('Completed', 'Completed'),
-        ('Cancelled', 'Cancelled')
+        
     ], default='Pending')  
     user_order_id = models.PositiveIntegerField(blank=True, null=True, editable=False)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=2)  # Discount on the total
@@ -213,17 +215,70 @@ class Order(models.Model):
     billed = models.BooleanField(default=False)
     combined_id = models.UUIDField(default=None, null=True, blank=True)  # Identifies grouped orders
 
-    PAYMENT_METHODS = [
+    # PAYMENT_METHODS = [
+    #     ('cash', 'Cash'),
+    #     ('gpay', 'GPay'),
+    #     ('card', 'Credit Card'),
+    #     ('pending', 'Pending'),
+    # ]
+    # payment_method = models.CharField(
+    #     max_length=20,
+    #     choices=PAYMENT_METHODS,
+    #     default='pending'
+    # )
+    
+
+    PAYMENT_METHOD_CHOICES = [
         ('cash', 'Cash'),
         ('gpay', 'GPay'),
         ('card', 'Credit Card'),
-        ('pending', 'Pending'),
     ]
-    payment_method = models.CharField(
-        max_length=20,
-        choices=PAYMENT_METHODS,
-        default='pending'
+    
+    # Replace with this implementation
+    _payment_methods = models.TextField(
+        default='[]',
+        blank=True
     )
+    payment_amounts = models.JSONField(default=list, blank=True)
+    
+    # def save_payment_methods(self, methods, amounts):
+    #     self.payment_methods = methods
+    #     self.payment_amounts = amounts
+    #     self.save()
+
+    def get_payment_methods_with_amounts(self):
+        """Returns dict of {method: amount} for this order"""
+        if hasattr(self, 'payment_amounts') and self.payment_amounts:
+            # If payment amounts are stored separately
+            return {method: amount for method, amount in zip(self.payment_methods, self.payment_amounts)}
+        
+        # Default equal distribution if amounts not stored
+        if self.payment_methods and self.final_total:
+            amount_per_method = self.final_total / len(self.payment_methods)
+            return {method: amount_per_method for method in self.payment_methods}
+        return {}
+
+    @classmethod
+    def get_combined_payment_summary(cls, orders):
+        """Returns combined payment summary for multiple orders"""
+        summary = {}
+        for order in orders:
+            methods_with_amounts = order.get_payment_methods_with_amounts()
+            for method, amount in methods_with_amounts.items():
+                summary[method] = summary.get(method, 0) + amount
+        return summary
+    
+    @property
+    def payment_methods(self):
+        try:
+            return json.loads(self._payment_methods)
+        except (json.JSONDecodeError, TypeError):
+            return []
+    
+    @payment_methods.setter
+    def payment_methods(self, value):
+        self._payment_methods = json.dumps(value if value else [])
+    
 
     class Meta:
         unique_together = ('user', 'user_order_id')  # Ensures uniqueness per user
@@ -375,3 +430,13 @@ def update_table_pending_status(sender, instance, **kwargs):
 
 #     def __str__(self):
 #         return f"{self.username} ({self.restaurant.name if self.restaurant else 'No Restaurant'})"
+
+
+# models.py
+# class OrderPayment(models.Model):
+#     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
+#     method = models.CharField(max_length=20, choices=Order.PAYMENT_METHODS)
+#     amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+#     def __str__(self):
+#         return f"{self.method} - ₹{self.amount}"

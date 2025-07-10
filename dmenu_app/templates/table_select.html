@@ -1,0 +1,17 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Select a Table</h2>
+    <div class="row">
+        {% for table in tables %}
+        <div class="col-md-3">
+            <a href="{% url 'menu_display' username=table.user.username table_number=table.number %}" class="btn btn-outline-primary w-100 m-2">
+                Table {{ table.number }}
+            </a>
+        </div>
+        {% empty %}
+        <p>No tables available.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
